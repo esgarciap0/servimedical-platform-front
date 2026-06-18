@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import AddBoxIcon from '@mui/icons-material/AddBox'
 import CloseIcon from '@mui/icons-material/Close'
 import EditIcon from '@mui/icons-material/Edit'
@@ -35,21 +35,73 @@ import {
 } from '@mui/material'
 import logo from '../assets/app-256.png'
 
-type AphRow = {
-  aph: number
-  fecha: string
-  ambulancia: string
+type AphResponse = {
+  id: number
+  codigo: string
+  movil: string
+  placa: string
+  traslado: string
+  tipoTraslado: string
+  prioridad: string
+  fechaAccidente: string
+  horaAccidente: string
+  lugarOcurrencia: string
+  zonaOrigen: string
+  departamentoOrigen: string
+  municipioOrigen: string
+  documento: string
+  primerApellido: string
+  segundoApellido: string
+  primerNombre: string
+  segundoNombre: string
+  estadoCivil: string
+  ocupacion: string
+  sexo: string
+  fechaNacimiento: string
+  edad: string
+  celular: string
+  telefono: string
+  acompanante: string
+  celularAcompanante: string
+  avisarA: string
+  parentesco: string
+  direccion: string
+  zonaPaciente: string
+  departamento: string
+  ciudad: string
+  alergia: string
+  patologicos: string
+  medicacion: string
+  liquidos: string
   aseguradora: string
-  td: string
-  id: string
-  paciente: string
-  origen: string
-  destino: string
-  paramedico: string
+  poliza: string
+  planBeneficios: string
+  horaLlegada: string
+  transportadoA: string
+  departamentoTraslado: string
+  ciudadTransporte: string
+  causaExterna: string
+  presion: string
+  frecuenciaCardiaca: string
+  frecuenciaRespiratoria: string
+  temperatura: string
+  ro: string
+  rv: string
+  rm: string
+  hallazgos: string
+  diagnosticos: string
+  lesiones: string[]
+  procedimientos: string[]
+  materiales: string
   conductor: string
+  paramedico: string
+  medico: string
+  documentoMedico: string
+  createdAt: string
+  updatedAt: string
 }
 
-const aphRows: AphRow[] = []
+const API_BASE = 'http://localhost:8080/api/aph'
 
 const columns = [
   'APH',
@@ -230,6 +282,14 @@ export function Prehospitalizacion() {
   const [form, setForm] = useState<AphForm>(initialForm)
   const [selectedInjuries, setSelectedInjuries] = useState<string[]>([])
   const [selectedProcedures, setSelectedProcedures] = useState<string[]>([])
+  const [rows, setRows] = useState<AphResponse[]>([])
+
+  useEffect(() => {
+    fetch(API_BASE)
+      .then((res) => res.json())
+      .then(setRows)
+      .catch(() => setRows([]))
+  }, [])
 
   const updateField = (field: keyof AphForm, value: string) => {
     setForm((current) => ({ ...current, [field]: value }))
@@ -237,6 +297,51 @@ export function Prehospitalizacion() {
 
   const toggleItem = (item: string, values: string[], setter: (items: string[]) => void) => {
     setter(values.includes(item) ? values.filter((value) => value !== item) : [...values, item])
+  }
+
+  const handleSave = async () => {
+    const body = {
+      ...form,
+      lesiones: selectedInjuries,
+      procedimientos: selectedProcedures,
+      fechaAccidente: form.fechaAccidente || null,
+      horaAccidente: form.horaAccidente || null,
+      fechaNacimiento: form.fechaNacimiento || null,
+      horaLlegada: form.horaLlegada || null,
+    }
+    try {
+      const response = await fetch(API_BASE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      if (!response.ok) {
+        const text = await response.text()
+        alert(`Error ${response.status}: ${text.slice(0, 200)}`)
+        return
+      }
+      setOpen(false)
+      setForm(initialForm)
+      setSelectedInjuries([])
+      setSelectedProcedures([])
+      setTab(0)
+      const res = await fetch(API_BASE)
+      setRows(await res.json())
+    } catch (err) {
+      alert('Error de red: ' + (err instanceof Error ? err.message : 'desconocido'))
+    }
+  }
+
+  const handleDownloadPdf = async (id: number) => {
+    try {
+      const res = await fetch(`${API_BASE}/${id}/pdf`)
+      if (!res.ok) { alert('Error al descargar PDF'); return }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `APH-${id}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      alert('Error al descargar PDF')
+    }
   }
 
   return (
@@ -256,27 +361,28 @@ export function Prehospitalizacion() {
         </Box>
 
         <CardContent sx={{ p: 3 }}>
-          <Stack spacing={3}>
-            <Box>
+          <Stack spacing={2}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5 }}>
               <Button
                 variant="contained"
                 startIcon={<AddBoxIcon />}
                 onClick={() => setOpen(true)}
-                sx={{ bgcolor: '#1fa2b5', '&:hover': { bgcolor: '#168da0' } }}
+                sx={{ bgcolor: '#1fa2b5', '&:hover': { bgcolor: '#168da0' }, width: { xs: '100%', sm: 'auto' } }}
               >
                 Nuevo APH
               </Button>
-            </Box>
-
-            <Box>
-              <Button variant="contained" color="inherit" sx={{ bgcolor: '#6c757d', color: 'white' }}>
+              <Button
+                variant="contained"
+                color="inherit"
+                sx={{ bgcolor: '#6c757d', color: 'white', width: { xs: '100%', sm: 'auto' } }}
+              >
                 Exportar a Excel
               </Button>
             </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1 }}>
-              <Typography>Buscar:</Typography>
-              <TextField size="small" sx={{ width: 230 }} />
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'flex-end', alignItems: { xs: 'stretch', sm: 'center' }, gap: 1 }}>
+              <Typography sx={{ fontSize: { xs: 13, sm: 14 } }}>Buscar:</Typography>
+              <TextField size="small" sx={{ width: { xs: '100%', sm: 230 } }} />
             </Box>
 
             <TableContainer sx={{ border: '1px solid #d9dee7', overflowX: 'auto' }}>
@@ -291,26 +397,26 @@ export function Prehospitalizacion() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {aphRows.length === 0 ? (
+                  {rows.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={columns.length} align="center" sx={{ py: 6, color: 'text.secondary' }}>
                         No hay registros disponibles
                       </TableCell>
                     </TableRow>
                   ) : (
-                    aphRows.map((row) => (
-                      <TableRow key={row.aph} hover>
-                        <TableCell>{row.aph}</TableCell>
-                        <TableCell>{row.fecha}</TableCell>
-                        <TableCell>{row.ambulancia}</TableCell>
-                        <TableCell>{row.aseguradora}</TableCell>
-                        <TableCell>{row.td}</TableCell>
-                        <TableCell>{row.id}</TableCell>
-                        <TableCell sx={{ maxWidth: 210 }}>{row.paciente}</TableCell>
-                        <TableCell sx={{ maxWidth: 260 }}>{row.origen}</TableCell>
-                        <TableCell sx={{ maxWidth: 230 }}>{row.destino}</TableCell>
-                        <TableCell>{row.paramedico}</TableCell>
-                        <TableCell>{row.conductor}</TableCell>
+                    rows.map((row) => (
+                      <TableRow key={row.id} hover>
+                        <TableCell>{row.codigo || row.id}</TableCell>
+                        <TableCell>{row.createdAt?.split('T')[0] || ''}</TableCell>
+                        <TableCell>{row.movil || ''}</TableCell>
+                        <TableCell>{row.aseguradora || ''}</TableCell>
+                        <TableCell>{row.documento?.length === 10 ? 'CC' : row.documento?.length === 11 ? 'TI' : ''}</TableCell>
+                        <TableCell>{row.documento || ''}</TableCell>
+                        <TableCell sx={{ maxWidth: 210 }}>{`${row.primerNombre || ''} ${row.primerApellido || ''}`}</TableCell>
+                        <TableCell sx={{ maxWidth: 260 }}>{row.lugarOcurrencia || ''}</TableCell>
+                        <TableCell sx={{ maxWidth: 230 }}>{row.transportadoA || ''}</TableCell>
+                        <TableCell>{row.paramedico || ''}</TableCell>
+                        <TableCell>{row.conductor || ''}</TableCell>
                         <TableCell>
                           <Stack direction="row" spacing={0.7} sx={{ alignItems: 'center' }}>
                             <IconButton size="small" sx={{ bgcolor: '#0d6efd', color: 'white', borderRadius: 1 }}>
@@ -319,7 +425,7 @@ export function Prehospitalizacion() {
                             <IconButton size="small" sx={{ bgcolor: '#ffc107', color: 'white', borderRadius: 1 }}>
                               <EditIcon fontSize="small" />
                             </IconButton>
-                            <IconButton size="small" sx={{ color: '#dc3545', borderRadius: 1 }}>
+                            <IconButton size="small" onClick={() => handleDownloadPdf(row.id)} sx={{ color: '#dc3545', borderRadius: 1 }}>
                               <PictureAsPdfIcon fontSize="small" />
                             </IconButton>
                           </Stack>
@@ -335,14 +441,14 @@ export function Prehospitalizacion() {
       </Card>
 
       <Dialog open={open} onClose={() => setOpen(false)} fullScreen>
-        <DialogTitle sx={{ bgcolor: '#25a8b7', color: 'white', py: 1.5, pr: 7 }}>
-          <Typography variant="h5" sx={{ fontWeight: 800 }}>
+        <DialogTitle sx={{ bgcolor: '#25a8b7', color: 'white', py: { xs: 1.2, md: 1.5 }, pr: 7 }}>
+          <Typography sx={{ fontWeight: 800, fontSize: { xs: 16, sm: 20, md: 24 } }}>
             Registrar formato APH
           </Typography>
           <IconButton
             aria-label="Cerrar"
             onClick={() => setOpen(false)}
-            sx={{ position: 'absolute', right: 16, top: 10, color: 'white' }}
+            sx={{ position: 'absolute', right: { xs: 8, md: 16 }, top: { xs: 6, md: 10 }, color: 'white' }}
           >
             <CloseIcon fontSize="large" />
           </IconButton>
@@ -384,11 +490,11 @@ export function Prehospitalizacion() {
                 {tab === 6 && <CrewTab form={form} updateField={updateField} />}
               </Paper>
 
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
-                <Button variant="outlined" color="inherit" onClick={() => setOpen(false)}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+                <Button variant="outlined" color="inherit" onClick={() => setOpen(false)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
                   Cancelar
                 </Button>
-                <Button variant="contained" sx={{ bgcolor: '#1f9d49', '&:hover': { bgcolor: '#18823c' } }}>
+                <Button variant="contained" onClick={handleSave} sx={{ bgcolor: '#1f9d49', '&:hover': { bgcolor: '#18823c' }, width: { xs: '100%', sm: 'auto' } }}>
                   Guardar formato
                 </Button>
               </Box>

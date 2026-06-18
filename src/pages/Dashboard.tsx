@@ -15,41 +15,51 @@ export function Dashboard() {
   const navigate = useNavigate()
 
   return (
-    <Stack spacing={4}>
+    <Stack spacing={3}>
       <Box>
-        <Typography variant="h5" sx={{ mb: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 800, mb: 2 }}>
           Navegacion por modulos
         </Typography>
-        <Grid container spacing={3}>
+        <Grid container spacing={2}>
           {modules.map((module) => {
             const Icon = module.icon
 
             return (
               <Grid key={module.path} size={{ xs: 12, sm: 6, lg: 4 }}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent>
+                <Card
+                  sx={{
+                    height: '100%',
+                    '&:active': { bgcolor: 'action.selected' },
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => navigate(module.path)}
+                >
+                  <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                     <Box
                       sx={{
-                        width: 48,
-                        height: 48,
+                        width: { xs: 40, sm: 48 },
+                        height: { xs: 40, sm: 48 },
                         borderRadius: 3,
                         display: 'grid',
                         placeItems: 'center',
                         bgcolor: 'rgba(15,111,222,0.1)',
                         color: 'primary.main',
-                        mb: 2,
+                        mb: 1.5,
                       }}
                     >
-                      <Icon />
+                      <Icon sx={{ fontSize: { xs: 20, sm: 24 } }} />
                     </Box>
-                    <Typography variant="h6">{module.name}</Typography>
-                    <Typography color="text.secondary" sx={{ mt: 1, minHeight: 48 }}>
+                    <Typography variant={window.innerWidth < 600 ? 'subtitle1' : 'h6'}>
+                      {module.name}
+                    </Typography>
+                    <Typography color="text.secondary" sx={{ mt: 0.5, fontSize: { xs: 13, sm: 14 } }}>
                       {module.description}
                     </Typography>
                     <Button
                       endIcon={<ArrowForwardIcon />}
-                      onClick={() => navigate(module.path)}
-                      sx={{ mt: 2 }}
+                      size="small"
+                      sx={{ mt: 1.5 }}
+                      onClick={(e) => { e.stopPropagation(); navigate(module.path) }}
                     >
                       Abrir modulo
                     </Button>
