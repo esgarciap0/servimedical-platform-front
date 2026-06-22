@@ -256,6 +256,19 @@ const causes = [
   'Otro',
 ]
 
+const trasladoOptions = ['PRIMARIO', 'SECUNDARIO']
+const tipoTrasladoOptions = ['BASICO', 'MEDICALIZADO']
+const prioridadOptions = ['1', '2', '3', '4']
+const zonaOptions = ['U', 'R']
+const sexoOptions = ['M', 'F']
+const estadoCivilOptions = ['SOLTERO', 'CASADO', 'UNION_LIBRE', 'DIVORCIADO', 'VIUDO']
+const yesNoOptions = ['SI', 'NO']
+const planBeneficiosOptions = ['SOAT', 'ARL', 'EPS', 'PARTICULAR']
+const ageOptions = Array.from({ length: 100 }, (_, index) => String(index + 1))
+const ambulanceOptions = ['001', '002', '003']
+const conductorOptions = ['Luis Ramos', 'Oscar Soto', 'Oscar Castro']
+const paramedicoOptions = ['Eliana Florez', 'Deiba Puche']
+
 const procedures = [
   'Oxigenacion',
   'Hemoplastia',
@@ -277,8 +290,6 @@ const procedures = [
   'Collar cervical',
   'Otro',
 ]
-
-const injuryAreas = ['Cabeza', 'Torax', 'Abdomen', 'Brazo izquierdo', 'Brazo derecho', 'Pierna izquierda', 'Pierna derecha']
 
 const requiredFieldsByTab: Record<number, (keyof AphForm)[]> = {
   0: ['codigo', 'movil', 'placa', 'traslado', 'tipoTraslado', 'prioridad', 'fechaAccidente', 'horaAccidente', 'lugarOcurrencia', 'zonaOrigen', 'departamentoOrigen', 'municipioOrigen', 'documento', 'primerApellido', 'segundoApellido', 'primerNombre', 'segundoNombre', 'estadoCivil', 'ocupacion', 'sexo', 'fechaNacimiento', 'edad', 'celular', 'telefono', 'acompanante', 'celularAcompanante', 'avisarA', 'parentesco', 'direccion', 'zonaPaciente', 'departamento', 'ciudad', 'alergia', 'patologicos', 'medicacion', 'liquidos'],
@@ -435,43 +446,45 @@ export function Prehospitalizacion() {
       </Breadcrumbs>
 
       <Card sx={{ overflow: 'hidden', borderRadius: 1.5 }}>
-        <Box sx={{ bgcolor: '#25a8b7', color: 'white', px: 3, py: 1.8 }}>
-          <Typography variant="h6" sx={{ fontWeight: 500 }}>
+        <Box sx={{ bgcolor: '#0f766e', color: 'white', px: 2, py: 1.2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, fontSize: 18, letterSpacing: 0.3 }}>
             GESTION APH
           </Typography>
         </Box>
 
-        <CardContent sx={{ p: 3 }}>
-          <Stack spacing={2}>
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5 }}>
+        <CardContent sx={{ p: 2 }}>
+          <Stack spacing={1.5}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
               <Button
                 variant="contained"
                 startIcon={<AddBoxIcon />}
                 onClick={() => { setFieldErrors({}); setOpen(true) }}
-                sx={{ bgcolor: '#1fa2b5', '&:hover': { bgcolor: '#168da0' }, width: { xs: '100%', sm: 'auto' } }}
+                size="small"
+                sx={{ bgcolor: '#0f766e', '&:hover': { bgcolor: '#115e59' }, width: { xs: '100%', sm: 'auto' } }}
               >
                 Nuevo APH
               </Button>
               <Button
                 variant="contained"
                 color="inherit"
-                sx={{ bgcolor: '#6c757d', color: 'white', width: { xs: '100%', sm: 'auto' } }}
+                size="small"
+                sx={{ bgcolor: '#334155', color: 'white', width: { xs: '100%', sm: 'auto' } }}
               >
                 Exportar a Excel
               </Button>
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'flex-end', alignItems: { xs: 'stretch', sm: 'center' }, gap: 1 }}>
-              <Typography sx={{ fontSize: { xs: 13, sm: 14 } }}>Buscar:</Typography>
-              <TextField size="small" sx={{ width: { xs: '100%', sm: 230 } }} />
+              <Typography sx={{ fontSize: 13, fontWeight: 700 }}>Buscar</Typography>
+              <TextField size="small" sx={{ width: { xs: '100%', sm: 220 } }} />
             </Box>
 
             <TableContainer sx={{ border: '1px solid #d9dee7', overflowX: 'auto' }}>
-              <Table size="small" sx={{ minWidth: 1500 }}>
+              <Table size="small" sx={{ minWidth: 1300 }}>
                 <TableHead>
                   <TableRow sx={{ background: 'linear-gradient(#ffffff, #f4f6f8)' }}>
                     {columns.map((column) => (
-                      <TableCell key={column} sx={{ fontWeight: 800, fontSize: 16, whiteSpace: 'nowrap' }}>
+                      <TableCell key={column} sx={{ fontWeight: 800, fontSize: 13, whiteSpace: 'nowrap', py: 1 }}>
                         {column} <Box component="span" sx={{ color: '#aeb4bd' }}>↕</Box>
                       </TableCell>
                     ))}
@@ -522,8 +535,8 @@ export function Prehospitalizacion() {
       </Card>
 
       <Dialog open={open} onClose={() => { setOpen(false); setEditId(null); setFieldErrors({}) }} fullScreen>
-        <DialogTitle sx={{ bgcolor: '#25a8b7', color: 'white', py: { xs: 1.2, md: 1.5 }, pr: 7 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: { xs: 16, sm: 20, md: 24 } }}>
+        <DialogTitle sx={{ bgcolor: '#0f766e', color: 'white', py: 1, pr: 7 }}>
+          <Typography sx={{ fontWeight: 800, fontSize: { xs: 15, sm: 18, md: 20 } }}>
             {editId ? `Editar APH #${editId}` : 'Registrar formato APH'}
           </Typography>
           <IconButton
@@ -535,21 +548,27 @@ export function Prehospitalizacion() {
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ p: 0, bgcolor: '#f8fafc' }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', xl: 'minmax(0, 1fr) 430px' }, minHeight: 'calc(100vh - 64px)' }}>
-            <Box sx={{ p: 2, overflow: 'auto' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', xl: 'minmax(0, 1fr) 320px' }, minHeight: 'calc(100vh - 56px)' }}>
+            <Box sx={{ p: 1, overflow: 'auto' }}>
               <Tabs
                 value={tab}
                 onChange={(_, value) => setTab(value)}
                 variant="scrollable"
                 scrollButtons="auto"
-                sx={{ bgcolor: 'white', borderBottom: '1px solid #dbe3ee', mb: 2 }}
+                sx={{
+                  bgcolor: 'white',
+                  borderBottom: '1px solid #dbe3ee',
+                  mb: 1,
+                  minHeight: 36,
+                  '& .MuiTab-root': { minHeight: 36, py: 0.25, px: 1, fontSize: 12, textTransform: 'none', fontWeight: 800 },
+                }}
               >
                 {tabs.map((item) => (
-                  <Tab key={item} label={item} sx={{ fontSize: 17, textTransform: 'none' }} />
+                  <Tab key={item} label={item} sx={{ fontSize: 12, textTransform: 'none' }} />
                 ))}
               </Tabs>
 
-              <Paper sx={{ p: { xs: 2, md: 3 }, borderRadius: 2, border: '1px solid #dbe3ee' }} elevation={1}>
+              <Paper sx={{ p: { xs: 1, md: 1.25 }, borderRadius: 2, border: '1px solid #dbe3ee' }} elevation={1}>
                 {tab === 0 && <PatientTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
                 {tab === 1 && <InsuranceTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
                 {tab === 2 && <CauseTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
@@ -573,24 +592,24 @@ export function Prehospitalizacion() {
                 {tab === 6 && <CrewTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
               </Paper>
 
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, justifyContent: 'space-between', gap: 1, mt: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, justifyContent: 'space-between', gap: 0.75, mt: 1 }}>
                 <Box sx={{ display: 'flex', gap: 1, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', sm: 'auto' } }}>
                   {tab > 0 && (
-                    <Button variant="outlined" onClick={() => setTab(tab - 1)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                    <Button size="small" variant="outlined" onClick={() => setTab(tab - 1)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
                       ← Anterior
                     </Button>
                   )}
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', sm: 'auto' } }}>
-                  <Button variant="outlined" color="inherit" onClick={() => { setOpen(false); setEditId(null); setFieldErrors({}) }} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                  <Button size="small" variant="outlined" color="inherit" onClick={() => { setOpen(false); setEditId(null); setFieldErrors({}) }} sx={{ width: { xs: '100%', sm: 'auto' } }}>
                     Cancelar
                   </Button>
                   {tab < tabs.length - 1 ? (
-                    <Button variant="contained" onClick={() => { if (validateTab(tab)) setTab(tab + 1) }} sx={{ bgcolor: '#075db8', '&:hover': { bgcolor: '#064a94' }, width: { xs: '100%', sm: 'auto' } }}>
+                    <Button size="small" variant="contained" onClick={() => { if (validateTab(tab)) setTab(tab + 1) }} sx={{ bgcolor: '#075db8', '&:hover': { bgcolor: '#064a94' }, width: { xs: '100%', sm: 'auto' } }}>
                       Siguiente →
                     </Button>
                   ) : (
-                    <Button variant="contained" onClick={() => { if (validateTab(tab)) handleSave() }} sx={{ bgcolor: '#1f9d49', '&:hover': { bgcolor: '#18823c' }, width: { xs: '100%', sm: 'auto' } }}>
+                    <Button size="small" variant="contained" onClick={() => { if (validateTab(tab)) handleSave() }} sx={{ bgcolor: '#1f9d49', '&:hover': { bgcolor: '#18823c' }, width: { xs: '100%', sm: 'auto' } }}>
                       Guardar
                     </Button>
                   )}
@@ -618,69 +637,69 @@ export function Prehospitalizacion() {
 
 function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean> }) {
   return (
-    <Stack spacing={3}>
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput label="Codigo APH" value={form.codigo} onChange={(value) => updateField('codigo', value)} error={!!fieldErrors['codigo']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput label="Movil" select value={form.movil} onChange={(value) => updateField('movil', value)} options={['001', '002', '003']} error={!!fieldErrors['movil']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput label="Placa" value={form.placa} onChange={(value) => updateField('placa', value)} error={!!fieldErrors['placa']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput label="Traslado" value={form.traslado} onChange={(value) => updateField('traslado', value)} error={!!fieldErrors['traslado']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput label="Tipo traslado" value={form.tipoTraslado} onChange={(value) => updateField('tipoTraslado', value)} error={!!fieldErrors['tipoTraslado']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput label="Prioridad" value={form.prioridad} onChange={(value) => updateField('prioridad', value)} error={!!fieldErrors['prioridad']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput label="Fecha Accidente" type="date" value={form.fechaAccidente} onChange={(value) => updateField('fechaAccidente', value)} error={!!fieldErrors['fechaAccidente']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput label="Hora Accidente" type="time" value={form.horaAccidente} onChange={(value) => updateField('horaAccidente', value)} error={!!fieldErrors['horaAccidente']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput label="Lugar de Ocurrencia" value={form.lugarOcurrencia} onChange={(value) => updateField('lugarOcurrencia', value)} error={!!fieldErrors['lugarOcurrencia']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput label="Zona Origen" select value={form.zonaOrigen} onChange={(value) => updateField('zonaOrigen', value)} options={['U', 'R']} error={!!fieldErrors['zonaOrigen']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput label="Dep.Origen" value={form.departamentoOrigen} onChange={(value) => updateField('departamentoOrigen', value)} error={!!fieldErrors['departamentoOrigen']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput label="Municipio Origen" value={form.municipioOrigen} onChange={(value) => updateField('municipioOrigen', value)} error={!!fieldErrors['municipioOrigen']} /></Grid>
+    <Stack spacing={1}>
+      <Grid container spacing={1}>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Codigo APH" value={form.codigo} onChange={(value) => updateField('codigo', value)} error={!!fieldErrors['codigo']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Movil" select value={form.movil} onChange={(value) => updateField('movil', value)} options={ambulanceOptions} error={!!fieldErrors['movil']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Placa" value={form.placa} onChange={(value) => updateField('placa', value)} error={!!fieldErrors['placa']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Traslado" select value={form.traslado} onChange={(value) => updateField('traslado', value)} options={trasladoOptions} error={!!fieldErrors['traslado']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Tipo traslado" select value={form.tipoTraslado} onChange={(value) => updateField('tipoTraslado', value)} options={tipoTrasladoOptions} error={!!fieldErrors['tipoTraslado']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Prioridad" select value={form.prioridad} onChange={(value) => updateField('prioridad', value)} options={prioridadOptions} error={!!fieldErrors['prioridad']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Fecha Accidente" type="date" value={form.fechaAccidente} onChange={(value) => updateField('fechaAccidente', value)} error={!!fieldErrors['fechaAccidente']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Hora Accidente" type="time" value={form.horaAccidente} onChange={(value) => updateField('horaAccidente', value)} error={!!fieldErrors['horaAccidente']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Lugar de Ocurrencia" select value={form.lugarOcurrencia} onChange={(value) => updateField('lugarOcurrencia', value)} options={['Vía pública', 'Vivienda', 'Empresa', 'Institución', 'Otro']} error={!!fieldErrors['lugarOcurrencia']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Zona Origen" select value={form.zonaOrigen} onChange={(value) => updateField('zonaOrigen', value)} options={zonaOptions} error={!!fieldErrors['zonaOrigen']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Dep.Origen" select value={form.departamentoOrigen} onChange={(value) => updateField('departamentoOrigen', value)} options={['Antioquia', 'Atlántico', 'Bogotá', 'Cundinamarca', 'Santander', 'Valle']} error={!!fieldErrors['departamentoOrigen']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Municipio Origen" select value={form.municipioOrigen} onChange={(value) => updateField('municipioOrigen', value)} options={['Medellín', 'Bogotá', 'Cali', 'Barranquilla', 'Bucaramanga', 'Otra']} error={!!fieldErrors['municipioOrigen']} /></Grid>
       </Grid>
 
-      <SectionTitle>Datos del paciente o victima</SectionTitle>
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 4 }}><FormInput label="Numero de documento" value={form.documento} onChange={(value) => updateField('documento', value)} error={!!fieldErrors['documento']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput label="Primer Apellido" value={form.primerApellido} onChange={(value) => updateField('primerApellido', value)} error={!!fieldErrors['primerApellido']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput label="Segundo Apellido" value={form.segundoApellido} onChange={(value) => updateField('segundoApellido', value)} error={!!fieldErrors['segundoApellido']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput label="Primer Nombre" value={form.primerNombre} onChange={(value) => updateField('primerNombre', value)} error={!!fieldErrors['primerNombre']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput label="Segundo Nombre" value={form.segundoNombre} onChange={(value) => updateField('segundoNombre', value)} error={!!fieldErrors['segundoNombre']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput label="Estado Civil" value={form.estadoCivil} onChange={(value) => updateField('estadoCivil', value)} error={!!fieldErrors['estadoCivil']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput label="Ocupacion" value={form.ocupacion} onChange={(value) => updateField('ocupacion', value)} error={!!fieldErrors['ocupacion']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput label="Sexo" select value={form.sexo} onChange={(value) => updateField('sexo', value)} options={['M', 'F']} error={!!fieldErrors['sexo']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput label="Fecha de Nacimiento" type="date" value={form.fechaNacimiento} onChange={(value) => updateField('fechaNacimiento', value)} error={!!fieldErrors['fechaNacimiento']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput label="Edad" value={form.edad} onChange={(value) => updateField('edad', value)} error={!!fieldErrors['edad']} /></Grid>
+      <SectionTitle compact>Datos del paciente o victima</SectionTitle>
+      <Grid container spacing={1}>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Numero de documento" value={form.documento} onChange={(value) => updateField('documento', value)} error={!!fieldErrors['documento']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Primer Apellido" select value={form.primerApellido} onChange={(value) => updateField('primerApellido', value)} options={['Pérez', 'Gómez', 'Rodríguez', 'Torres', 'López', 'Otro']} error={!!fieldErrors['primerApellido']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Segundo Apellido" select value={form.segundoApellido} onChange={(value) => updateField('segundoApellido', value)} options={['Pérez', 'Gómez', 'Rodríguez', 'Torres', 'López', 'Otro']} error={!!fieldErrors['segundoApellido']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Primer Nombre" select value={form.primerNombre} onChange={(value) => updateField('primerNombre', value)} options={['Juan', 'Carlos', 'Luis', 'María', 'Ana', 'Otro']} error={!!fieldErrors['primerNombre']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Segundo Nombre" select value={form.segundoNombre} onChange={(value) => updateField('segundoNombre', value)} options={['Andrés', 'José', 'Camilo', 'Sofía', 'Paula', 'Otro']} error={!!fieldErrors['segundoNombre']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Estado Civil" select value={form.estadoCivil} onChange={(value) => updateField('estadoCivil', value)} options={estadoCivilOptions} error={!!fieldErrors['estadoCivil']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Ocupacion" select value={form.ocupacion} onChange={(value) => updateField('ocupacion', value)} options={['Estudiante', 'Empleado', 'Independiente', 'Ama de casa', 'Desempleado', 'Otro']} error={!!fieldErrors['ocupacion']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Sexo" select value={form.sexo} onChange={(value) => updateField('sexo', value)} options={sexoOptions} error={!!fieldErrors['sexo']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Fecha de Nacimiento" type="date" value={form.fechaNacimiento} onChange={(value) => updateField('fechaNacimiento', value)} error={!!fieldErrors['fechaNacimiento']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Edad" select value={form.edad} onChange={(value) => updateField('edad', value)} options={ageOptions} error={!!fieldErrors['edad']} /></Grid>
       </Grid>
 
-      <Grid container spacing={2}>
+      <Grid container spacing={1}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <SectionTitle>Datos de contacto</SectionTitle>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 6 }}><FormInput label="Celular Paciente" value={form.celular} onChange={(value) => updateField('celular', value)} error={!!fieldErrors['celular']} /></Grid>
-            <Grid size={{ xs: 12, md: 6 }}><FormInput label="Telefono Paciente" value={form.telefono} onChange={(value) => updateField('telefono', value)} error={!!fieldErrors['telefono']} /></Grid>
-            <Grid size={{ xs: 12, md: 6 }}><FormInput label="Avisar a" value={form.avisarA} onChange={(value) => updateField('avisarA', value)} error={!!fieldErrors['avisarA']} /></Grid>
-            <Grid size={{ xs: 12, md: 6 }}><FormInput label="Parentesco" value={form.parentesco} onChange={(value) => updateField('parentesco', value)} error={!!fieldErrors['parentesco']} /></Grid>
+          <SectionTitle compact>Datos de contacto</SectionTitle>
+          <Grid container spacing={1}>
+            <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Celular Paciente" select value={form.celular} onChange={(value) => updateField('celular', value)} options={['3000000000', '3000000001', '3000000002', 'Otro']} error={!!fieldErrors['celular']} /></Grid>
+            <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Telefono Paciente" select value={form.telefono} onChange={(value) => updateField('telefono', value)} options={['Fijo', 'No tiene', 'Otro']} error={!!fieldErrors['telefono']} /></Grid>
+            <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Avisar a" select value={form.avisarA} onChange={(value) => updateField('avisarA', value)} options={['Familiar', 'Acompanante', 'Contacto', 'Otro']} error={!!fieldErrors['avisarA']} /></Grid>
+            <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Parentesco" select value={form.parentesco} onChange={(value) => updateField('parentesco', value)} options={['Madre', 'Padre', 'Esposo(a)', 'Hijo(a)', 'Hermano(a)', 'Otro']} error={!!fieldErrors['parentesco']} /></Grid>
           </Grid>
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          <SectionTitle>Datos acompanante</SectionTitle>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 8 }}><FormInput label="Nombre Acompanante" value={form.acompanante} onChange={(value) => updateField('acompanante', value)} error={!!fieldErrors['acompanante']} /></Grid>
-            <Grid size={{ xs: 12, md: 4 }}><FormInput label="Celular Acompanante" value={form.celularAcompanante} onChange={(value) => updateField('celularAcompanante', value)} error={!!fieldErrors['celularAcompanante']} /></Grid>
+          <SectionTitle compact>Datos acompanante</SectionTitle>
+          <Grid container spacing={1}>
+            <Grid size={{ xs: 12, md: 8 }}><FormInput compact label="Nombre Acompanante" select value={form.acompanante} onChange={(value) => updateField('acompanante', value)} options={['Sin acompanante', 'Familiar', 'Conductor', 'Otro']} error={!!fieldErrors['acompanante']} /></Grid>
+            <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Celular Acompanante" select value={form.celularAcompanante} onChange={(value) => updateField('celularAcompanante', value)} options={['3000000000', '3000000001', 'Otro']} error={!!fieldErrors['celularAcompanante']} /></Grid>
           </Grid>
         </Grid>
       </Grid>
 
-      <SectionTitle>Ubicacion</SectionTitle>
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 4 }}><FormInput label="Direccion de Residencia" value={form.direccion} onChange={(value) => updateField('direccion', value)} error={!!fieldErrors['direccion']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput label="Zona Paciente" select value={form.zonaPaciente} onChange={(value) => updateField('zonaPaciente', value)} options={['U', 'R']} error={!!fieldErrors['zonaPaciente']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput label="Departamento" value={form.departamento} onChange={(value) => updateField('departamento', value)} error={!!fieldErrors['departamento']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput label="Ciudad" value={form.ciudad} onChange={(value) => updateField('ciudad', value)} error={!!fieldErrors['ciudad']} /></Grid>
+      <SectionTitle compact>Ubicacion</SectionTitle>
+      <Grid container spacing={1}>
+        <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Direccion de Residencia" select value={form.direccion} onChange={(value) => updateField('direccion', value)} options={['Urbana', 'Rural', 'Barrio', 'Vereda', 'Otra']} error={!!fieldErrors['direccion']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Zona Paciente" select value={form.zonaPaciente} onChange={(value) => updateField('zonaPaciente', value)} options={zonaOptions} error={!!fieldErrors['zonaPaciente']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Departamento" select value={form.departamento} onChange={(value) => updateField('departamento', value)} options={['Antioquia', 'Atlántico', 'Bogotá', 'Cundinamarca', 'Santander', 'Valle']} error={!!fieldErrors['departamento']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Ciudad" select value={form.ciudad} onChange={(value) => updateField('ciudad', value)} options={['Medellín', 'Bogotá', 'Cali', 'Barranquilla', 'Bucaramanga', 'Otra']} error={!!fieldErrors['ciudad']} /></Grid>
       </Grid>
 
-      <SectionTitle>Antecedentes personales</SectionTitle>
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput label="Alergia" value={form.alergia} onChange={(value) => updateField('alergia', value)} error={!!fieldErrors['alergia']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput label="Patologicos" value={form.patologicos} onChange={(value) => updateField('patologicos', value)} error={!!fieldErrors['patologicos']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput label="Medicacion" value={form.medicacion} onChange={(value) => updateField('medicacion', value)} error={!!fieldErrors['medicacion']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput label="Liquidos y alimentos" value={form.liquidos} onChange={(value) => updateField('liquidos', value)} error={!!fieldErrors['liquidos']} /></Grid>
+      <SectionTitle compact>Antecedentes personales</SectionTitle>
+      <Grid container spacing={1}>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Alergia" select value={form.alergia} onChange={(value) => updateField('alergia', value)} options={yesNoOptions} error={!!fieldErrors['alergia']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Patologicos" select value={form.patologicos} onChange={(value) => updateField('patologicos', value)} options={['HTA', 'Diabetes', 'Asma', 'Epilepsia', 'Ninguno', 'Otro']} error={!!fieldErrors['patologicos']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Medicacion" select value={form.medicacion} onChange={(value) => updateField('medicacion', value)} options={['No', 'Si', 'Desconocida']} error={!!fieldErrors['medicacion']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Liquidos y alimentos" select value={form.liquidos} onChange={(value) => updateField('liquidos', value)} options={['Via oral', 'Ayuno', 'Suero', 'Desconocido']} error={!!fieldErrors['liquidos']} /></Grid>
       </Grid>
     </Stack>
   )
@@ -688,15 +707,15 @@ function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateF
 
 function InsuranceTab({ form, updateField, fieldErrors }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean> }) {
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={1}>
       <Grid size={{ xs: 12, md: 6 }}>
-        <SectionTitle>Datos aseguradora</SectionTitle>
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, md: 8 }}><FormInput label="Aseguradora" value={form.aseguradora} onChange={(value) => updateField('aseguradora', value)} error={!!fieldErrors['aseguradora']} /></Grid>
-          <Grid size={{ xs: 12, md: 4 }}><FormInput label="Numero Poliza" value={form.poliza} onChange={(value) => updateField('poliza', value)} error={!!fieldErrors['poliza']} /></Grid>
+        <SectionTitle compact>Datos aseguradora</SectionTitle>
+        <Grid container spacing={1}>
+          <Grid size={{ xs: 12, md: 8 }}><FormInput compact label="Aseguradora" select value={form.aseguradora} onChange={(value) => updateField('aseguradora', value)} options={['Sura', 'Nueva EPS', 'Sanitas', 'Coomeva', 'Otra']} error={!!fieldErrors['aseguradora']} /></Grid>
+          <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Numero Poliza" select value={form.poliza} onChange={(value) => updateField('poliza', value)} options={['SOAT', 'ARL', 'Particular', 'Otro']} error={!!fieldErrors['poliza']} /></Grid>
           <Grid size={{ xs: 12 }}>
-            <Typography sx={{ fontWeight: 800, mb: 1, color: fieldErrors['planBeneficios'] ? '#d32f2f' : '#1f2937' }}>Plan de Beneficios *</Typography>
-            {['SOAT', 'ARL', 'EPS'].map((item) => (
+            <Typography sx={{ fontWeight: 800, mb: 1, fontSize: 13, color: fieldErrors['planBeneficios'] ? '#d32f2f' : '#1f2937' }}>Plan de Beneficios *</Typography>
+            {planBeneficiosOptions.map((item) => (
               <FormControlLabel
                 key={item}
                 control={
@@ -705,19 +724,19 @@ function InsuranceTab({ form, updateField, fieldErrors }: { form: AphForm; updat
                     onChange={() => updateField('planBeneficios', item)}
                   />
                 }
-                label={item}
+                label={<Typography sx={{ fontSize: 13 }}>{item}</Typography>}
               />
             ))}
           </Grid>
         </Grid>
       </Grid>
       <Grid size={{ xs: 12, md: 6 }}>
-        <SectionTitle>Datos de traslado</SectionTitle>
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, md: 4 }}><FormInput label="Hora de llegada" type="time" value={form.horaLlegada} onChange={(value) => updateField('horaLlegada', value)} error={!!fieldErrors['horaLlegada']} /></Grid>
-          <Grid size={{ xs: 12, md: 8 }}><FormInput label="Transportado a" value={form.transportadoA} onChange={(value) => updateField('transportadoA', value)} error={!!fieldErrors['transportadoA']} /></Grid>
-          <Grid size={{ xs: 12, md: 6 }}><FormInput label="Departamento traslado" value={form.departamentoTraslado} onChange={(value) => updateField('departamentoTraslado', value)} error={!!fieldErrors['departamentoTraslado']} /></Grid>
-          <Grid size={{ xs: 12, md: 6 }}><FormInput label="Ciudad de transporte" value={form.ciudadTransporte} onChange={(value) => updateField('ciudadTransporte', value)} error={!!fieldErrors['ciudadTransporte']} /></Grid>
+        <SectionTitle compact>Datos de traslado</SectionTitle>
+        <Grid container spacing={1}>
+          <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Hora de llegada" type="time" value={form.horaLlegada} onChange={(value) => updateField('horaLlegada', value)} error={!!fieldErrors['horaLlegada']} /></Grid>
+          <Grid size={{ xs: 12, md: 8 }}><FormInput compact label="Transportado a" select value={form.transportadoA} onChange={(value) => updateField('transportadoA', value)} options={['Urgencias', 'Hospital X', 'Clínica Y', 'Otro']} error={!!fieldErrors['transportadoA']} /></Grid>
+          <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Departamento traslado" select value={form.departamentoTraslado} onChange={(value) => updateField('departamentoTraslado', value)} options={['Antioquia', 'Atlántico', 'Bogotá', 'Cundinamarca', 'Santander', 'Valle']} error={!!fieldErrors['departamentoTraslado']} /></Grid>
+          <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Ciudad de transporte" select value={form.ciudadTransporte} onChange={(value) => updateField('ciudadTransporte', value)} options={['Medellín', 'Bogotá', 'Cali', 'Barranquilla', 'Bucaramanga', 'Otra']} error={!!fieldErrors['ciudadTransporte']} /></Grid>
         </Grid>
       </Grid>
     </Grid>
@@ -726,14 +745,14 @@ function InsuranceTab({ form, updateField, fieldErrors }: { form: AphForm; updat
 
 function CauseTab({ form, updateField, fieldErrors }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean> }) {
   return (
-    <Stack spacing={2}>
-      <SectionTitle sx={{ color: fieldErrors['causaExterna'] ? '#d32f2f' : undefined }}>Motivo del llamado de emergencia *</SectionTitle>
-      <Grid container spacing={1}>
+    <Stack spacing={1}>
+      <SectionTitle compact sx={{ color: fieldErrors['causaExterna'] ? '#d32f2f' : undefined }}>Motivo del llamado de emergencia *</SectionTitle>
+      <Grid container spacing={0.25}>
         {causes.map((cause) => (
           <Grid key={cause} size={{ xs: 12, sm: 6, md: 3 }}>
             <FormControlLabel
               control={<Radio checked={form.causaExterna === cause} onChange={() => updateField('causaExterna', cause)} />}
-              label={<Typography sx={{ fontWeight: 800 }}>{cause}</Typography>}
+              label={<Typography sx={{ fontWeight: 700, fontSize: 13 }}>{cause}</Typography>}
             />
           </Grid>
         ))}
@@ -744,40 +763,40 @@ function CauseTab({ form, updateField, fieldErrors }: { form: AphForm; updateFie
 
 function PhysicalExamTab({ form, updateField, fieldErrors, selectedInjuries, onToggleInjury }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean>; selectedInjuries: string[]; onToggleInjury: (area: string) => void }) {
   return (
-    <Stack spacing={3}>
-      <Grid container spacing={2}>
+    <Stack spacing={1}>
+      <Grid container spacing={1}>
         <Grid size={{ xs: 12, md: 7 }}>
-          <SectionTitle>Examen fisico</SectionTitle>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 3 }}><FormInput label="Presion Arterial" value={form.presion} onChange={(value) => updateField('presion', value)} error={!!fieldErrors['presion']} /></Grid>
-            <Grid size={{ xs: 12, md: 3 }}><FormInput label="Frec. Cardiaca" value={form.frecuenciaCardiaca} onChange={(value) => updateField('frecuenciaCardiaca', value)} error={!!fieldErrors['frecuenciaCardiaca']} /></Grid>
-            <Grid size={{ xs: 12, md: 3 }}><FormInput label="Frec. Respiratoria" value={form.frecuenciaRespiratoria} onChange={(value) => updateField('frecuenciaRespiratoria', value)} error={!!fieldErrors['frecuenciaRespiratoria']} /></Grid>
-            <Grid size={{ xs: 12, md: 3 }}><FormInput label="Temp. Corporal" value={form.temperatura} onChange={(value) => updateField('temperatura', value)} error={!!fieldErrors['temperatura']} /></Grid>
+          <SectionTitle compact>Examen fisico</SectionTitle>
+          <Grid container spacing={1}>
+            <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Presion Arterial" select value={form.presion} onChange={(value) => updateField('presion', value)} options={['120/80', '110/70', '100/60', '90/60', 'Otro']} error={!!fieldErrors['presion']} /></Grid>
+            <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Frec. Cardiaca" select value={form.frecuenciaCardiaca} onChange={(value) => updateField('frecuenciaCardiaca', value)} options={['60', '70', '80', '90', '100', 'Otro']} error={!!fieldErrors['frecuenciaCardiaca']} /></Grid>
+            <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Frec. Respiratoria" select value={form.frecuenciaRespiratoria} onChange={(value) => updateField('frecuenciaRespiratoria', value)} options={['12', '16', '20', '24', 'Otro']} error={!!fieldErrors['frecuenciaRespiratoria']} /></Grid>
+            <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Temp. Corporal" select value={form.temperatura} onChange={(value) => updateField('temperatura', value)} options={['36.0', '36.5', '37.0', '38.0', 'Otro']} error={!!fieldErrors['temperatura']} /></Grid>
           </Grid>
         </Grid>
         <Grid size={{ xs: 12, md: 5 }}>
-          <SectionTitle>Escala Glasgow</SectionTitle>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 4 }}><FormInput label="R.O" select value={form.ro} onChange={(value) => updateField('ro', value)} options={['1', '2', '3', '4']} error={!!fieldErrors['ro']} /></Grid>
-            <Grid size={{ xs: 4 }}><FormInput label="R.V." select value={form.rv} onChange={(value) => updateField('rv', value)} options={['1', '2', '3', '4', '5']} error={!!fieldErrors['rv']} /></Grid>
-            <Grid size={{ xs: 4 }}><FormInput label="R.M" select value={form.rm} onChange={(value) => updateField('rm', value)} options={['1', '2', '3', '4', '5', '6']} error={!!fieldErrors['rm']} /></Grid>
+          <SectionTitle compact>Escala Glasgow</SectionTitle>
+          <Grid container spacing={1}>
+            <Grid size={{ xs: 4 }}><FormInput compact label="R.O" select value={form.ro} onChange={(value) => updateField('ro', value)} options={['1', '2', '3', '4']} error={!!fieldErrors['ro']} /></Grid>
+            <Grid size={{ xs: 4 }}><FormInput compact label="R.V." select value={form.rv} onChange={(value) => updateField('rv', value)} options={['1', '2', '3', '4', '5']} error={!!fieldErrors['rv']} /></Grid>
+            <Grid size={{ xs: 4 }}><FormInput compact label="R.M" select value={form.rm} onChange={(value) => updateField('rm', value)} options={['1', '2', '3', '4', '5', '6']} error={!!fieldErrors['rm']} /></Grid>
           </Grid>
         </Grid>
       </Grid>
 
-      <Grid container spacing={2}>
+      <Grid container spacing={1}>
         <Grid size={{ xs: 12, md: 5 }}>
-          <Paper variant="outlined" sx={{ overflow: 'hidden', borderColor: fieldErrors['lesiones'] ? '#d32f2f' : undefined }}>
-            <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid #dbe3ee' }}>
-              <SectionTitle sx={{ color: fieldErrors['lesiones'] ? '#d32f2f' : undefined }}>Ubique las lesiones *</SectionTitle>
+          <Paper variant="outlined" sx={{ overflow: 'hidden', borderColor: fieldErrors['lesiones'] ? '#d32f2f' : '#dbe3ee' }}>
+            <Box sx={{ px: 1.25, py: 0.75, borderBottom: '1px solid #dbe3ee' }}>
+              <SectionTitle compact sx={{ color: fieldErrors['lesiones'] ? '#d32f2f' : undefined }}>Ubique las lesiones *</SectionTitle>
             </Box>
             <BodySelector selected={selectedInjuries} onToggle={onToggleInjury} />
           </Paper>
         </Grid>
         <Grid size={{ xs: 12, md: 7 }}>
-          <Stack spacing={2}>
-            <FormInput label="Describa los hallazgos" multiline rows={6} value={form.hallazgos} onChange={(value) => updateField('hallazgos', value)} error={!!fieldErrors['hallazgos']} />
-            <FormInput label="Diagnosticos CIE 10" multiline rows={5} value={form.diagnosticos} onChange={(value) => updateField('diagnosticos', value)} error={!!fieldErrors['diagnosticos']} />
+          <Stack spacing={1}>
+            <FormInput compact label="Describa los hallazgos" multiline rows={4} value={form.hallazgos} onChange={(value) => updateField('hallazgos', value)} error={!!fieldErrors['hallazgos']} />
+            <FormInput compact label="Diagnosticos CIE 10" select value={form.diagnosticos} onChange={(value) => updateField('diagnosticos', value)} options={['I10', 'J18.9', 'S06.0', 'R55', 'Otro']} error={!!fieldErrors['diagnosticos']} />
           </Stack>
         </Grid>
       </Grid>
@@ -787,14 +806,14 @@ function PhysicalExamTab({ form, updateField, fieldErrors, selectedInjuries, onT
 
 function ProcedureTab({ selectedProcedures, onToggleProcedure, fieldErrors }: { selectedProcedures: string[]; onToggleProcedure: (procedure: string) => void; fieldErrors: Record<string, boolean> }) {
   return (
-    <Stack spacing={2}>
-      <SectionTitle sx={{ color: fieldErrors['procedimientos'] ? '#d32f2f' : undefined }}>Procedimientos realizados *</SectionTitle>
-      <Grid container spacing={1}>
+    <Stack spacing={1}>
+      <SectionTitle compact sx={{ color: fieldErrors['procedimientos'] ? '#d32f2f' : undefined }}>Procedimientos realizados *</SectionTitle>
+      <Grid container spacing={0.25}>
         {procedures.map((procedure) => (
           <Grid key={procedure} size={{ xs: 12, sm: 6, md: 4, lg: 2 }}>
             <FormControlLabel
               control={<Checkbox checked={selectedProcedures.includes(procedure)} onChange={() => onToggleProcedure(procedure)} />}
-              label={<Typography sx={{ fontWeight: 800 }}>{procedure}</Typography>}
+              label={<Typography sx={{ fontWeight: 700, fontSize: 13 }}>{procedure}</Typography>}
             />
           </Grid>
         ))}
@@ -805,24 +824,24 @@ function ProcedureTab({ selectedProcedures, onToggleProcedure, fieldErrors }: { 
 
 function MaterialsTab({ form, updateField, fieldErrors }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean> }) {
   return (
-    <Stack spacing={2}>
-      <SectionTitle>Materiales utilizados</SectionTitle>
-      <FormInput label="Ingrese los materiales y drogas utilizados separados por coma" multiline rows={10} value={form.materiales} onChange={(value) => updateField('materiales', value)} error={!!fieldErrors['materiales']} />
+    <Stack spacing={1}>
+      <SectionTitle compact>Materiales utilizados</SectionTitle>
+      <FormInput compact label="Materiales y drogas" select value={form.materiales} onChange={(value) => updateField('materiales', value)} options={['Suero', 'Oxígeno', 'Adrenalina', 'Gasa', 'Otro']} error={!!fieldErrors['materiales']} />
     </Stack>
   )
 }
 
 function CrewTab({ form, updateField, fieldErrors }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean> }) {
   return (
-    <Stack spacing={3}>
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 4 }}><FormInput label="Conductor" select value={form.conductor} onChange={(value) => updateField('conductor', value)} options={['Luis Ramos', 'Oscar Soto', 'Oscar Castro']} error={!!fieldErrors['conductor']} /></Grid>
-        <Grid size={{ xs: 12, md: 4 }}><FormInput label="Paramedico" select value={form.paramedico} onChange={(value) => updateField('paramedico', value)} options={['Eliana Florez', 'Deiba Puche']} error={!!fieldErrors['paramedico']} /></Grid>
+    <Stack spacing={1}>
+      <Grid container spacing={1}>
+        <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Conductor" select value={form.conductor} onChange={(value) => updateField('conductor', value)} options={conductorOptions} error={!!fieldErrors['conductor']} /></Grid>
+        <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Paramedico" select value={form.paramedico} onChange={(value) => updateField('paramedico', value)} options={paramedicoOptions} error={!!fieldErrors['paramedico']} /></Grid>
         <Grid size={{ xs: 12, md: 4 }}>
-          <SectionTitle>Datos I.P.S. o prestador</SectionTitle>
-          <Stack spacing={2}>
-            <FormInput label="Medico y/o responsable I.P.S." value={form.medico} onChange={(value) => updateField('medico', value)} error={!!fieldErrors['medico']} />
-            <FormInput label="Doc. ID" value={form.documentoMedico} onChange={(value) => updateField('documentoMedico', value)} error={!!fieldErrors['documentoMedico']} />
+          <SectionTitle compact>Datos I.P.S. o prestador</SectionTitle>
+          <Stack spacing={1}>
+            <FormInput compact label="Medico y/o responsable I.P.S." select value={form.medico} onChange={(value) => updateField('medico', value)} options={['Dra. Ana', 'Dr. Pérez', 'Dr. Gómez', 'Otro']} error={!!fieldErrors['medico']} />
+            <FormInput compact label="Doc. ID" select value={form.documentoMedico} onChange={(value) => updateField('documentoMedico', value)} options={['CC', 'TI', 'CE', 'Pasaporte']} error={!!fieldErrors['documentoMedico']} />
           </Stack>
         </Grid>
       </Grid>
@@ -830,7 +849,29 @@ function CrewTab({ form, updateField, fieldErrors }: { form: AphForm; updateFiel
   )
 }
 
-function FormInput({ label, value, onChange, type = 'text', select = false, options = [], multiline = false, rows, error }: { label: string; value: string; onChange: (value: string) => void; type?: string; select?: boolean; options?: string[]; multiline?: boolean; rows?: number; error?: boolean }) {
+function FormInput({
+  label,
+  value,
+  onChange,
+  type = 'text',
+  select = false,
+  options = [],
+  multiline = false,
+  rows,
+  error,
+  compact = false,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  type?: string
+  select?: boolean
+  options?: string[]
+  multiline?: boolean
+  rows?: number
+  error?: boolean
+  compact?: boolean
+}) {
   return (
     <TextField
       fullWidth
@@ -842,11 +883,14 @@ function FormInput({ label, value, onChange, type = 'text', select = false, opti
       multiline={multiline}
       rows={rows}
       error={error}
+      size={compact ? 'small' : 'small'}
       slotProps={type === 'date' || type === 'time' ? { inputLabel: { shrink: true } } : undefined}
       sx={{
-        '& .MuiInputLabel-root': { fontWeight: 800, color: error ? '#d32f2f' : '#1f2937' },
-        '& .MuiOutlinedInput-root': { bgcolor: '#f8fafc' },
+        '& .MuiInputLabel-root': { fontWeight: 700, fontSize: 12, color: error ? '#d32f2f' : '#1f2937' },
+        '& .MuiOutlinedInput-root': { bgcolor: '#f8fafc', borderRadius: 1 },
         '& .Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: error ? '#d32f2f' : '#075db8' },
+        '& .MuiInputBase-input': { py: compact ? 0.6 : 0.85, fontSize: 12.5 },
+        '& .MuiInputBase-root': { minHeight: compact ? 34 : 38 },
       }}
     >
       {options.map((option) => (
@@ -856,9 +900,20 @@ function FormInput({ label, value, onChange, type = 'text', select = false, opti
   )
 }
 
-function SectionTitle({ children, sx }: { children: React.ReactNode; sx?: Record<string, unknown> }) {
+function SectionTitle({ children, sx, compact = false }: { children: React.ReactNode; sx?: Record<string, unknown>; compact?: boolean }) {
   return (
-    <Typography variant="h6" sx={{ color: '#0073f0', fontWeight: 800, textTransform: 'uppercase', ...sx }}>
+    <Typography
+      variant="h6"
+      sx={{
+        color: '#0073f0',
+        fontWeight: 800,
+        textTransform: 'uppercase',
+        fontSize: compact ? 12.5 : 14,
+        lineHeight: 1.1,
+        mb: compact ? 0.5 : 1,
+        ...sx,
+      }}
+    >
       {children}
     </Typography>
   )
@@ -870,8 +925,8 @@ function BodySelector({ selected, onToggle }: { selected: string[]; onToggle: (a
   const stroke = (area: string) => isSelected(area) ? '#991b1b' : '#9ca3af'
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-      <svg width="280" height="420" viewBox="0 0 280 420" role="img" aria-label="Selector de lesiones">
+    <Box sx={{ display: 'flex', justifyContent: 'center', p: 1 }}>
+      <svg width="250" height="360" viewBox="0 0 280 420" role="img" aria-label="Selector de lesiones">
         <rect width="280" height="420" fill="#ffffff" rx="8" />
         <text x="140" y="18" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#374151">Toque la zona afectada</text>
 
@@ -920,18 +975,18 @@ function PdfPreview({ form, injuries, procedures }: { form: AphForm; injuries: s
   const fullName = [form.primerNombre, form.segundoNombre, form.primerApellido, form.segundoApellido].filter(Boolean).join(' ')
 
   return (
-    <Box sx={{ display: { xs: 'none', xl: 'block' }, bgcolor: '#e5e7eb', borderLeft: '1px solid #cbd5e1', p: 2, overflow: 'auto' }}>
-      <Typography sx={{ mb: 1, fontWeight: 800, color: '#075db8' }}>Previsualizacion PDF</Typography>
-      <Paper sx={{ width: 390, minHeight: 560, mx: 'auto', p: 2, bgcolor: 'white', color: '#111827', fontFamily: 'Arial, sans-serif' }}>
+    <Box sx={{ display: { xs: 'none', xl: 'block' }, bgcolor: '#e5e7eb', borderLeft: '1px solid #cbd5e1', p: 1, overflow: 'auto' }}>
+      <Typography sx={{ mb: 0.5, fontWeight: 800, fontSize: 12, color: '#075db8' }}>Previsualizacion PDF</Typography>
+      <Paper sx={{ width: 320, minHeight: 500, mx: 'auto', p: 1.25, bgcolor: 'white', color: '#111827', fontFamily: 'Arial, sans-serif' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box component="img" src={logo} alt="Servimedical" sx={{ width: 80, height: 'auto', flex: '0 0 auto' }} />
+          <Box component="img" src={logo} alt="Servimedical" sx={{ width: 58, height: 'auto', flex: '0 0 auto' }} />
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontSize: 13, fontWeight: 800, lineHeight: 1.1 }}>ATENCION PRE-HOSPITALARIA</Typography>
-            <Typography sx={{ fontSize: 10, lineHeight: 1.1 }}>FAPH v1 - 01/03/2025</Typography>
+            <Typography sx={{ fontSize: 11, fontWeight: 800, lineHeight: 1.05 }}>ATENCION PRE-HOSPITALARIA</Typography>
+            <Typography sx={{ fontSize: 8.5, lineHeight: 1.05 }}>FAPH v1 - 01/03/2025</Typography>
           </Box>
           <Box sx={{ textAlign: 'right', flex: '0 0 auto' }}>
-            <Typography sx={{ fontSize: 10, lineHeight: 1.1 }}>Placa</Typography>
-            <Typography sx={{ fontSize: 10, fontWeight: 700, lineHeight: 1.1 }}>{form.placa || '-'}</Typography>
+            <Typography sx={{ fontSize: 8.5, lineHeight: 1.05 }}>Placa</Typography>
+            <Typography sx={{ fontSize: 8.5, fontWeight: 700, lineHeight: 1.05 }}>{form.placa || '-'}</Typography>
           </Box>
         </Box>
         <PreviewBar>DATOS DEL PACIENTE</PreviewBar>
