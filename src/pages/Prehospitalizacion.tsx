@@ -261,13 +261,8 @@ const tipoTrasladoOptions = ['BASICO', 'MEDICALIZADO']
 const prioridadOptions = ['1', '2', '3', '4']
 const zonaOptions = ['U', 'R']
 const sexoOptions = ['M', 'F']
-const estadoCivilOptions = ['SOLTERO', 'CASADO', 'UNION_LIBRE', 'DIVORCIADO', 'VIUDO']
-const yesNoOptions = ['SI', 'NO']
 const planBeneficiosOptions = ['SOAT', 'ARL', 'EPS', 'PARTICULAR']
-const ageOptions = Array.from({ length: 100 }, (_, index) => String(index + 1))
 const ambulanceOptions = ['001', '002', '003']
-const conductorOptions = ['Luis Ramos', 'Oscar Soto', 'Oscar Castro']
-const paramedicoOptions = ['Eliana Florez', 'Deiba Puche']
 
 const procedures = [
   'Oxigenacion',
@@ -639,67 +634,67 @@ function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateF
   return (
     <Stack spacing={1}>
       <Grid container spacing={1}>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Codigo APH" value={form.codigo} onChange={(value) => updateField('codigo', value)} error={!!fieldErrors['codigo']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Movil" select value={form.movil} onChange={(value) => updateField('movil', value)} options={ambulanceOptions} error={!!fieldErrors['movil']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Placa" value={form.placa} onChange={(value) => updateField('placa', value)} error={!!fieldErrors['placa']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Traslado" select value={form.traslado} onChange={(value) => updateField('traslado', value)} options={trasladoOptions} error={!!fieldErrors['traslado']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Tipo traslado" select value={form.tipoTraslado} onChange={(value) => updateField('tipoTraslado', value)} options={tipoTrasladoOptions} error={!!fieldErrors['tipoTraslado']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Prioridad" select value={form.prioridad} onChange={(value) => updateField('prioridad', value)} options={prioridadOptions} error={!!fieldErrors['prioridad']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Fecha Accidente" type="date" value={form.fechaAccidente} onChange={(value) => updateField('fechaAccidente', value)} error={!!fieldErrors['fechaAccidente']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Hora Accidente" type="time" value={form.horaAccidente} onChange={(value) => updateField('horaAccidente', value)} error={!!fieldErrors['horaAccidente']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Lugar de Ocurrencia" select value={form.lugarOcurrencia} onChange={(value) => updateField('lugarOcurrencia', value)} options={['Vía pública', 'Vivienda', 'Empresa', 'Institución', 'Otro']} error={!!fieldErrors['lugarOcurrencia']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Zona Origen" select value={form.zonaOrigen} onChange={(value) => updateField('zonaOrigen', value)} options={zonaOptions} error={!!fieldErrors['zonaOrigen']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Dep.Origen" select value={form.departamentoOrigen} onChange={(value) => updateField('departamentoOrigen', value)} options={['Antioquia', 'Atlántico', 'Bogotá', 'Cundinamarca', 'Santander', 'Valle']} error={!!fieldErrors['departamentoOrigen']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Municipio Origen" select value={form.municipioOrigen} onChange={(value) => updateField('municipioOrigen', value)} options={['Medellín', 'Bogotá', 'Cali', 'Barranquilla', 'Bucaramanga', 'Otra']} error={!!fieldErrors['municipioOrigen']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Codigo APH" value={form.codigo} onChange={(value) => updateField('codigo', value)} error={!!fieldErrors['codigo']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Movil" select value={form.movil} onChange={(value) => updateField('movil', value)} options={ambulanceOptions} error={!!fieldErrors['movil']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Placa" value={form.placa} onChange={(value) => updateField('placa', value)} error={!!fieldErrors['placa']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Traslado" select value={form.traslado} onChange={(value) => updateField('traslado', value)} options={trasladoOptions} error={!!fieldErrors['traslado']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Tipo traslado" select value={form.tipoTraslado} onChange={(value) => updateField('tipoTraslado', value)} options={tipoTrasladoOptions} error={!!fieldErrors['tipoTraslado']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Prioridad" select value={form.prioridad} onChange={(value) => updateField('prioridad', value)} options={prioridadOptions} error={!!fieldErrors['prioridad']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Fecha Accidente" type="date" value={form.fechaAccidente} onChange={(value) => updateField('fechaAccidente', value)} error={!!fieldErrors['fechaAccidente']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Hora Accidente" type="time" value={form.horaAccidente} onChange={(value) => updateField('horaAccidente', value)} error={!!fieldErrors['horaAccidente']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Lugar de Ocurrencia" value={form.lugarOcurrencia} onChange={(value) => updateField('lugarOcurrencia', value)} error={!!fieldErrors['lugarOcurrencia']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Zona Origen" select value={form.zonaOrigen} onChange={(value) => updateField('zonaOrigen', value)} options={zonaOptions} error={!!fieldErrors['zonaOrigen']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Dep.Origen" value={form.departamentoOrigen} onChange={(value) => updateField('departamentoOrigen', value)} error={!!fieldErrors['departamentoOrigen']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Municipio Origen" value={form.municipioOrigen} onChange={(value) => updateField('municipioOrigen', value)} error={!!fieldErrors['municipioOrigen']} /></Grid>
       </Grid>
 
       <SectionTitle compact>Datos del paciente o victima</SectionTitle>
       <Grid container spacing={1}>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Numero de documento" value={form.documento} onChange={(value) => updateField('documento', value)} error={!!fieldErrors['documento']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Primer Apellido" select value={form.primerApellido} onChange={(value) => updateField('primerApellido', value)} options={['Pérez', 'Gómez', 'Rodríguez', 'Torres', 'López', 'Otro']} error={!!fieldErrors['primerApellido']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Segundo Apellido" select value={form.segundoApellido} onChange={(value) => updateField('segundoApellido', value)} options={['Pérez', 'Gómez', 'Rodríguez', 'Torres', 'López', 'Otro']} error={!!fieldErrors['segundoApellido']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Primer Nombre" select value={form.primerNombre} onChange={(value) => updateField('primerNombre', value)} options={['Juan', 'Carlos', 'Luis', 'María', 'Ana', 'Otro']} error={!!fieldErrors['primerNombre']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Segundo Nombre" select value={form.segundoNombre} onChange={(value) => updateField('segundoNombre', value)} options={['Andrés', 'José', 'Camilo', 'Sofía', 'Paula', 'Otro']} error={!!fieldErrors['segundoNombre']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Estado Civil" select value={form.estadoCivil} onChange={(value) => updateField('estadoCivil', value)} options={estadoCivilOptions} error={!!fieldErrors['estadoCivil']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Ocupacion" select value={form.ocupacion} onChange={(value) => updateField('ocupacion', value)} options={['Estudiante', 'Empleado', 'Independiente', 'Ama de casa', 'Desempleado', 'Otro']} error={!!fieldErrors['ocupacion']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Sexo" select value={form.sexo} onChange={(value) => updateField('sexo', value)} options={sexoOptions} error={!!fieldErrors['sexo']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Fecha de Nacimiento" type="date" value={form.fechaNacimiento} onChange={(value) => updateField('fechaNacimiento', value)} error={!!fieldErrors['fechaNacimiento']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Edad" select value={form.edad} onChange={(value) => updateField('edad', value)} options={ageOptions} error={!!fieldErrors['edad']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Numero de documento" value={form.documento} onChange={(value) => updateField('documento', value)} error={!!fieldErrors['documento']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Primer Apellido" value={form.primerApellido} onChange={(value) => updateField('primerApellido', value)} error={!!fieldErrors['primerApellido']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Segundo Apellido" value={form.segundoApellido} onChange={(value) => updateField('segundoApellido', value)} error={!!fieldErrors['segundoApellido']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Primer Nombre" value={form.primerNombre} onChange={(value) => updateField('primerNombre', value)} error={!!fieldErrors['primerNombre']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Segundo Nombre" value={form.segundoNombre} onChange={(value) => updateField('segundoNombre', value)} error={!!fieldErrors['segundoNombre']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Estado Civil" value={form.estadoCivil} onChange={(value) => updateField('estadoCivil', value)} error={!!fieldErrors['estadoCivil']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Ocupacion" value={form.ocupacion} onChange={(value) => updateField('ocupacion', value)} error={!!fieldErrors['ocupacion']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Sexo" select value={form.sexo} onChange={(value) => updateField('sexo', value)} options={sexoOptions} error={!!fieldErrors['sexo']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Fecha de Nacimiento" type="date" value={form.fechaNacimiento} onChange={(value) => updateField('fechaNacimiento', value)} error={!!fieldErrors['fechaNacimiento']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Edad" value={form.edad} onChange={(value) => updateField('edad', value)} error={!!fieldErrors['edad']} /></Grid>
       </Grid>
 
       <Grid container spacing={1}>
         <Grid size={{ xs: 12, md: 6 }}>
           <SectionTitle compact>Datos de contacto</SectionTitle>
           <Grid container spacing={1}>
-            <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Celular Paciente" select value={form.celular} onChange={(value) => updateField('celular', value)} options={['3000000000', '3000000001', '3000000002', 'Otro']} error={!!fieldErrors['celular']} /></Grid>
-            <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Telefono Paciente" select value={form.telefono} onChange={(value) => updateField('telefono', value)} options={['Fijo', 'No tiene', 'Otro']} error={!!fieldErrors['telefono']} /></Grid>
-            <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Avisar a" select value={form.avisarA} onChange={(value) => updateField('avisarA', value)} options={['Familiar', 'Acompanante', 'Contacto', 'Otro']} error={!!fieldErrors['avisarA']} /></Grid>
-            <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Parentesco" select value={form.parentesco} onChange={(value) => updateField('parentesco', value)} options={['Madre', 'Padre', 'Esposo(a)', 'Hijo(a)', 'Hermano(a)', 'Otro']} error={!!fieldErrors['parentesco']} /></Grid>
+            <Grid size={{ xs: 12, md: 6 }}><FormInput compact requiredHint label="Celular Paciente" value={form.celular} onChange={(value) => updateField('celular', value)} error={!!fieldErrors['celular']} /></Grid>
+            <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Telefono Paciente" value={form.telefono} onChange={(value) => updateField('telefono', value)} error={!!fieldErrors['telefono']} /></Grid>
+            <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Avisar a" value={form.avisarA} onChange={(value) => updateField('avisarA', value)} error={!!fieldErrors['avisarA']} /></Grid>
+            <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Parentesco" value={form.parentesco} onChange={(value) => updateField('parentesco', value)} error={!!fieldErrors['parentesco']} /></Grid>
           </Grid>
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
           <SectionTitle compact>Datos acompanante</SectionTitle>
           <Grid container spacing={1}>
-            <Grid size={{ xs: 12, md: 8 }}><FormInput compact label="Nombre Acompanante" select value={form.acompanante} onChange={(value) => updateField('acompanante', value)} options={['Sin acompanante', 'Familiar', 'Conductor', 'Otro']} error={!!fieldErrors['acompanante']} /></Grid>
-            <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Celular Acompanante" select value={form.celularAcompanante} onChange={(value) => updateField('celularAcompanante', value)} options={['3000000000', '3000000001', 'Otro']} error={!!fieldErrors['celularAcompanante']} /></Grid>
+            <Grid size={{ xs: 12, md: 8 }}><FormInput compact label="Nombre Acompanante" value={form.acompanante} onChange={(value) => updateField('acompanante', value)} error={!!fieldErrors['acompanante']} /></Grid>
+            <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Celular Acompanante" value={form.celularAcompanante} onChange={(value) => updateField('celularAcompanante', value)} error={!!fieldErrors['celularAcompanante']} /></Grid>
           </Grid>
         </Grid>
       </Grid>
 
       <SectionTitle compact>Ubicacion</SectionTitle>
       <Grid container spacing={1}>
-        <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Direccion de Residencia" select value={form.direccion} onChange={(value) => updateField('direccion', value)} options={['Urbana', 'Rural', 'Barrio', 'Vereda', 'Otra']} error={!!fieldErrors['direccion']} /></Grid>
-        <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Zona Paciente" select value={form.zonaPaciente} onChange={(value) => updateField('zonaPaciente', value)} options={zonaOptions} error={!!fieldErrors['zonaPaciente']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Departamento" select value={form.departamento} onChange={(value) => updateField('departamento', value)} options={['Antioquia', 'Atlántico', 'Bogotá', 'Cundinamarca', 'Santander', 'Valle']} error={!!fieldErrors['departamento']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Ciudad" select value={form.ciudad} onChange={(value) => updateField('ciudad', value)} options={['Medellín', 'Bogotá', 'Cali', 'Barranquilla', 'Bucaramanga', 'Otra']} error={!!fieldErrors['ciudad']} /></Grid>
+        <Grid size={{ xs: 12, md: 4 }}><FormInput compact requiredHint label="Direccion de Residencia" value={form.direccion} onChange={(value) => updateField('direccion', value)} error={!!fieldErrors['direccion']} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Zona Paciente" select value={form.zonaPaciente} onChange={(value) => updateField('zonaPaciente', value)} options={zonaOptions} error={!!fieldErrors['zonaPaciente']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Departamento" value={form.departamento} onChange={(value) => updateField('departamento', value)} error={!!fieldErrors['departamento']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Ciudad" value={form.ciudad} onChange={(value) => updateField('ciudad', value)} error={!!fieldErrors['ciudad']} /></Grid>
       </Grid>
 
       <SectionTitle compact>Antecedentes personales</SectionTitle>
       <Grid container spacing={1}>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Alergia" select value={form.alergia} onChange={(value) => updateField('alergia', value)} options={yesNoOptions} error={!!fieldErrors['alergia']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Patologicos" select value={form.patologicos} onChange={(value) => updateField('patologicos', value)} options={['HTA', 'Diabetes', 'Asma', 'Epilepsia', 'Ninguno', 'Otro']} error={!!fieldErrors['patologicos']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Medicacion" select value={form.medicacion} onChange={(value) => updateField('medicacion', value)} options={['No', 'Si', 'Desconocida']} error={!!fieldErrors['medicacion']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Liquidos y alimentos" select value={form.liquidos} onChange={(value) => updateField('liquidos', value)} options={['Via oral', 'Ayuno', 'Suero', 'Desconocido']} error={!!fieldErrors['liquidos']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Alergia" value={form.alergia} onChange={(value) => updateField('alergia', value)} error={!!fieldErrors['alergia']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Patologicos" value={form.patologicos} onChange={(value) => updateField('patologicos', value)} error={!!fieldErrors['patologicos']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Medicacion" value={form.medicacion} onChange={(value) => updateField('medicacion', value)} error={!!fieldErrors['medicacion']} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Liquidos y alimentos" value={form.liquidos} onChange={(value) => updateField('liquidos', value)} error={!!fieldErrors['liquidos']} /></Grid>
       </Grid>
     </Stack>
   )
@@ -711,8 +706,8 @@ function InsuranceTab({ form, updateField, fieldErrors }: { form: AphForm; updat
       <Grid size={{ xs: 12, md: 6 }}>
         <SectionTitle compact>Datos aseguradora</SectionTitle>
         <Grid container spacing={1}>
-          <Grid size={{ xs: 12, md: 8 }}><FormInput compact label="Aseguradora" select value={form.aseguradora} onChange={(value) => updateField('aseguradora', value)} options={['Sura', 'Nueva EPS', 'Sanitas', 'Coomeva', 'Otra']} error={!!fieldErrors['aseguradora']} /></Grid>
-          <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Numero Poliza" select value={form.poliza} onChange={(value) => updateField('poliza', value)} options={['SOAT', 'ARL', 'Particular', 'Otro']} error={!!fieldErrors['poliza']} /></Grid>
+          <Grid size={{ xs: 12, md: 8 }}><FormInput compact label="Aseguradora" value={form.aseguradora} onChange={(value) => updateField('aseguradora', value)} error={!!fieldErrors['aseguradora']} /></Grid>
+          <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Numero Poliza" value={form.poliza} onChange={(value) => updateField('poliza', value)} error={!!fieldErrors['poliza']} /></Grid>
           <Grid size={{ xs: 12 }}>
             <Typography sx={{ fontWeight: 800, mb: 1, fontSize: 13, color: fieldErrors['planBeneficios'] ? '#d32f2f' : '#1f2937' }}>Plan de Beneficios *</Typography>
             {planBeneficiosOptions.map((item) => (
@@ -734,9 +729,9 @@ function InsuranceTab({ form, updateField, fieldErrors }: { form: AphForm; updat
         <SectionTitle compact>Datos de traslado</SectionTitle>
         <Grid container spacing={1}>
           <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Hora de llegada" type="time" value={form.horaLlegada} onChange={(value) => updateField('horaLlegada', value)} error={!!fieldErrors['horaLlegada']} /></Grid>
-          <Grid size={{ xs: 12, md: 8 }}><FormInput compact label="Transportado a" select value={form.transportadoA} onChange={(value) => updateField('transportadoA', value)} options={['Urgencias', 'Hospital X', 'Clínica Y', 'Otro']} error={!!fieldErrors['transportadoA']} /></Grid>
-          <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Departamento traslado" select value={form.departamentoTraslado} onChange={(value) => updateField('departamentoTraslado', value)} options={['Antioquia', 'Atlántico', 'Bogotá', 'Cundinamarca', 'Santander', 'Valle']} error={!!fieldErrors['departamentoTraslado']} /></Grid>
-          <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Ciudad de transporte" select value={form.ciudadTransporte} onChange={(value) => updateField('ciudadTransporte', value)} options={['Medellín', 'Bogotá', 'Cali', 'Barranquilla', 'Bucaramanga', 'Otra']} error={!!fieldErrors['ciudadTransporte']} /></Grid>
+          <Grid size={{ xs: 12, md: 8 }}><FormInput compact label="Transportado a" value={form.transportadoA} onChange={(value) => updateField('transportadoA', value)} error={!!fieldErrors['transportadoA']} /></Grid>
+          <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Departamento traslado" value={form.departamentoTraslado} onChange={(value) => updateField('departamentoTraslado', value)} error={!!fieldErrors['departamentoTraslado']} /></Grid>
+          <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Ciudad de transporte" value={form.ciudadTransporte} onChange={(value) => updateField('ciudadTransporte', value)} error={!!fieldErrors['ciudadTransporte']} /></Grid>
         </Grid>
       </Grid>
     </Grid>
@@ -768,10 +763,10 @@ function PhysicalExamTab({ form, updateField, fieldErrors, selectedInjuries, onT
         <Grid size={{ xs: 12, md: 7 }}>
           <SectionTitle compact>Examen fisico</SectionTitle>
           <Grid container spacing={1}>
-            <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Presion Arterial" select value={form.presion} onChange={(value) => updateField('presion', value)} options={['120/80', '110/70', '100/60', '90/60', 'Otro']} error={!!fieldErrors['presion']} /></Grid>
-            <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Frec. Cardiaca" select value={form.frecuenciaCardiaca} onChange={(value) => updateField('frecuenciaCardiaca', value)} options={['60', '70', '80', '90', '100', 'Otro']} error={!!fieldErrors['frecuenciaCardiaca']} /></Grid>
-            <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Frec. Respiratoria" select value={form.frecuenciaRespiratoria} onChange={(value) => updateField('frecuenciaRespiratoria', value)} options={['12', '16', '20', '24', 'Otro']} error={!!fieldErrors['frecuenciaRespiratoria']} /></Grid>
-            <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Temp. Corporal" select value={form.temperatura} onChange={(value) => updateField('temperatura', value)} options={['36.0', '36.5', '37.0', '38.0', 'Otro']} error={!!fieldErrors['temperatura']} /></Grid>
+            <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Presion Arterial" value={form.presion} onChange={(value) => updateField('presion', value)} error={!!fieldErrors['presion']} /></Grid>
+            <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Frec. Cardiaca" value={form.frecuenciaCardiaca} onChange={(value) => updateField('frecuenciaCardiaca', value)} error={!!fieldErrors['frecuenciaCardiaca']} /></Grid>
+            <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Frec. Respiratoria" value={form.frecuenciaRespiratoria} onChange={(value) => updateField('frecuenciaRespiratoria', value)} error={!!fieldErrors['frecuenciaRespiratoria']} /></Grid>
+            <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Temp. Corporal" value={form.temperatura} onChange={(value) => updateField('temperatura', value)} error={!!fieldErrors['temperatura']} /></Grid>
           </Grid>
         </Grid>
         <Grid size={{ xs: 12, md: 5 }}>
@@ -796,7 +791,7 @@ function PhysicalExamTab({ form, updateField, fieldErrors, selectedInjuries, onT
         <Grid size={{ xs: 12, md: 7 }}>
           <Stack spacing={1}>
             <FormInput compact label="Describa los hallazgos" multiline rows={4} value={form.hallazgos} onChange={(value) => updateField('hallazgos', value)} error={!!fieldErrors['hallazgos']} />
-            <FormInput compact label="Diagnosticos CIE 10" select value={form.diagnosticos} onChange={(value) => updateField('diagnosticos', value)} options={['I10', 'J18.9', 'S06.0', 'R55', 'Otro']} error={!!fieldErrors['diagnosticos']} />
+            <FormInput compact label="Diagnosticos CIE 10" value={form.diagnosticos} onChange={(value) => updateField('diagnosticos', value)} error={!!fieldErrors['diagnosticos']} />
           </Stack>
         </Grid>
       </Grid>
@@ -826,7 +821,7 @@ function MaterialsTab({ form, updateField, fieldErrors }: { form: AphForm; updat
   return (
     <Stack spacing={1}>
       <SectionTitle compact>Materiales utilizados</SectionTitle>
-      <FormInput compact label="Materiales y drogas" select value={form.materiales} onChange={(value) => updateField('materiales', value)} options={['Suero', 'Oxígeno', 'Adrenalina', 'Gasa', 'Otro']} error={!!fieldErrors['materiales']} />
+      <FormInput compact label="Materiales y drogas" value={form.materiales} onChange={(value) => updateField('materiales', value)} error={!!fieldErrors['materiales']} />
     </Stack>
   )
 }
@@ -835,13 +830,13 @@ function CrewTab({ form, updateField, fieldErrors }: { form: AphForm; updateFiel
   return (
     <Stack spacing={1}>
       <Grid container spacing={1}>
-        <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Conductor" select value={form.conductor} onChange={(value) => updateField('conductor', value)} options={conductorOptions} error={!!fieldErrors['conductor']} /></Grid>
-        <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Paramedico" select value={form.paramedico} onChange={(value) => updateField('paramedico', value)} options={paramedicoOptions} error={!!fieldErrors['paramedico']} /></Grid>
+        <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Conductor" value={form.conductor} onChange={(value) => updateField('conductor', value)} error={!!fieldErrors['conductor']} /></Grid>
+        <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Paramedico" value={form.paramedico} onChange={(value) => updateField('paramedico', value)} error={!!fieldErrors['paramedico']} /></Grid>
         <Grid size={{ xs: 12, md: 4 }}>
           <SectionTitle compact>Datos I.P.S. o prestador</SectionTitle>
           <Stack spacing={1}>
-            <FormInput compact label="Medico y/o responsable I.P.S." select value={form.medico} onChange={(value) => updateField('medico', value)} options={['Dra. Ana', 'Dr. Pérez', 'Dr. Gómez', 'Otro']} error={!!fieldErrors['medico']} />
-            <FormInput compact label="Doc. ID" select value={form.documentoMedico} onChange={(value) => updateField('documentoMedico', value)} options={['CC', 'TI', 'CE', 'Pasaporte']} error={!!fieldErrors['documentoMedico']} />
+            <FormInput compact label="Medico y/o responsable I.P.S." value={form.medico} onChange={(value) => updateField('medico', value)} error={!!fieldErrors['medico']} />
+            <FormInput compact label="Doc. ID" value={form.documentoMedico} onChange={(value) => updateField('documentoMedico', value)} error={!!fieldErrors['documentoMedico']} />
           </Stack>
         </Grid>
       </Grid>
@@ -860,6 +855,7 @@ function FormInput({
   rows,
   error,
   compact = false,
+  requiredHint = false,
 }: {
   label: string
   value: string
@@ -871,7 +867,9 @@ function FormInput({
   rows?: number
   error?: boolean
   compact?: boolean
+  requiredHint?: boolean
 }) {
+  const showHint = requiredHint && value.trim() === ''
   return (
     <TextField
       fullWidth
@@ -884,6 +882,7 @@ function FormInput({
       rows={rows}
       error={error}
       size={compact ? 'small' : 'small'}
+      helperText={showHint ? 'Campo obligatorio' : undefined}
       slotProps={type === 'date' || type === 'time' ? { inputLabel: { shrink: true } } : undefined}
       sx={{
         '& .MuiInputLabel-root': { fontWeight: 700, fontSize: 12, color: error ? '#d32f2f' : '#1f2937' },
@@ -891,6 +890,7 @@ function FormInput({
         '& .Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: error ? '#d32f2f' : '#075db8' },
         '& .MuiInputBase-input': { py: compact ? 0.6 : 0.85, fontSize: 12.5 },
         '& .MuiInputBase-root': { minHeight: compact ? 34 : 38 },
+        '& .MuiFormHelperText-root': { mt: 0.4, ml: 0.5, fontSize: 11, fontWeight: 700 },
       }}
     >
       {options.map((option) => (
