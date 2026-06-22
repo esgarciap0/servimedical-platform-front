@@ -514,13 +514,28 @@ export function Prehospitalizacion() {
                 {tab === 6 && <CrewTab form={form} updateField={updateField} />}
               </Paper>
 
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, justifyContent: 'flex-end', gap: 1, mt: 2 }}>
-                <Button variant="outlined" color="inherit" onClick={() => setOpen(false)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-                  Cancelar
-                </Button>
-                <Button variant="contained" onClick={handleSave} sx={{ bgcolor: '#1f9d49', '&:hover': { bgcolor: '#18823c' }, width: { xs: '100%', sm: 'auto' } }}>
-                  Guardar formato
-                </Button>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column-reverse', sm: 'row' }, justifyContent: 'space-between', gap: 1, mt: 2 }}>
+                <Box sx={{ display: 'flex', gap: 1, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', sm: 'auto' } }}>
+                  {tab > 0 && (
+                    <Button variant="outlined" onClick={() => setTab(tab - 1)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                      ← Anterior
+                    </Button>
+                  )}
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', sm: 'auto' } }}>
+                  <Button variant="outlined" color="inherit" onClick={() => setOpen(false)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                    Cancelar
+                  </Button>
+                  {tab < tabs.length - 1 ? (
+                    <Button variant="contained" onClick={() => setTab(tab + 1)} sx={{ bgcolor: '#075db8', '&:hover': { bgcolor: '#064a94' }, width: { xs: '100%', sm: 'auto' } }}>
+                      Siguiente →
+                    </Button>
+                  ) : (
+                    <Button variant="contained" onClick={handleSave} sx={{ bgcolor: '#1f9d49', '&:hover': { bgcolor: '#18823c' }, width: { xs: '100%', sm: 'auto' } }}>
+                      Guardar
+                    </Button>
+                  )}
+                </Box>
               </Box>
             </Box>
 
@@ -791,53 +806,51 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 function BodySelector({ selected, onToggle }: { selected: string[]; onToggle: (area: string) => void }) {
   const isSelected = (area: string) => selected.includes(area)
+  const fill = (area: string) => isSelected(area) ? '#dc2626' : '#e5e7eb'
+  const stroke = (area: string) => isSelected(area) ? '#991b1b' : '#9ca3af'
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-      <svg width="360" height="500" viewBox="0 0 360 500" role="img" aria-label="Selector de lesiones">
-        <rect width="360" height="500" fill="#ffffff" />
-        <g transform="translate(70 28)" fill="#111827" stroke="#ffffff" strokeWidth="5">
-          <circle cx="70" cy="38" r="28" />
-          <rect x="43" y="70" width="54" height="110" rx="24" />
-          <path d="M42 82 10 155 35 168 62 100Z" />
-          <path d="M98 82 130 155 105 168 78 100Z" />
-          <path d="M50 178 30 330 58 330 72 188Z" />
-          <path d="M90 178 110 330 82 330 68 188Z" />
-        </g>
-        <g transform="translate(190 28)" fill="#111827" stroke="#ffffff" strokeWidth="5">
-          <circle cx="70" cy="38" r="28" />
-          <rect x="43" y="70" width="54" height="110" rx="24" />
-          <path d="M42 82 10 155 35 168 62 100Z" />
-          <path d="M98 82 130 155 105 168 78 100Z" />
-          <path d="M50 178 30 330 58 330 72 188Z" />
-          <path d="M90 178 110 330 82 330 68 188Z" />
-        </g>
-        {injuryAreas.map((area, index) => {
-          const positions = [
-            [140, 66],
-            [140, 152],
-            [140, 216],
-            [94, 190],
-            [186, 190],
-            [124, 340],
-            [156, 340],
-          ]
-          const [cx, cy] = positions[index]
+      <svg width="280" height="420" viewBox="0 0 280 420" role="img" aria-label="Selector de lesiones">
+        <rect width="280" height="420" fill="#ffffff" rx="8" />
+        <text x="140" y="18" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#374151">Toque la zona afectada</text>
 
-          return (
-            <circle
-              key={area}
-              cx={cx}
-              cy={cy}
-              r="17"
-              fill={isSelected(area) ? '#f0142f' : 'rgba(7,93,184,0.18)'}
-              stroke={isSelected(area) ? '#9f1239' : '#075db8'}
-              strokeWidth="2"
-              onClick={() => onToggle(area)}
-              style={{ cursor: 'pointer' }}
-            />
-          )
-        })}
+        <g transform="translate(140 0)">
+          <path d="M-22 30 C-22 14,-14 4,0 4 C14 4,22 14,22 30 C22 46,14 52,0 52 C-14 52,-22 46,-22 30Z"
+            fill={fill('Cabeza')} stroke={stroke('Cabeza')} strokeWidth="2"
+            onClick={() => onToggle('Cabeza')} style={{ cursor: 'pointer' }} />
+          <text x="0" y="32" textAnchor="middle" fontSize="8" fill={isSelected('Cabeza') ? 'white' : '#4b5563'} pointerEvents="none">Cabeza</text>
+
+          <path d="M-30 56 L-28 160 C-28 170,-18 176,0 176 C18 176,28 170,28 160 L30 56Z"
+            fill={fill('Torax')} stroke={stroke('Torax')} strokeWidth="2"
+            onClick={() => onToggle('Torax')} style={{ cursor: 'pointer' }} />
+          <text x="0" y="116" textAnchor="middle" fontSize="8" fill={isSelected('Torax') ? 'white' : '#4b5563'} pointerEvents="none">Torax</text>
+
+          <path d="M-26 178 L-24 250 C-24 262,-14 268,0 268 C14 268,24 262,24 250 L26 178Z"
+            fill={fill('Abdomen')} stroke={stroke('Abdomen')} strokeWidth="2"
+            onClick={() => onToggle('Abdomen')} style={{ cursor: 'pointer' }} />
+          <text x="0" y="224" textAnchor="middle" fontSize="8" fill={isSelected('Abdomen') ? 'white' : '#4b5563'} pointerEvents="none">Abdomen</text>
+
+          <path d="M-30 56 L-62 130 C-66 140,-60 148,-48 148 L-34 136 L-28 170Z"
+            fill={fill('Brazo izquierdo')} stroke={stroke('Brazo izquierdo')} strokeWidth="2"
+            onClick={() => onToggle('Brazo izquierdo')} style={{ cursor: 'pointer' }} />
+          <text x="-48" y="108" textAnchor="middle" fontSize="7" fill={isSelected('Brazo izquierdo') ? 'white' : '#4b5563'} pointerEvents="none">Brazo Izq</text>
+
+          <path d="M30 56 L62 130 C66 140,60 148,48 148 L34 136 L28 170Z"
+            fill={fill('Brazo derecho')} stroke={stroke('Brazo derecho')} strokeWidth="2"
+            onClick={() => onToggle('Brazo derecho')} style={{ cursor: 'pointer' }} />
+          <text x="48" y="108" textAnchor="middle" fontSize="7" fill={isSelected('Brazo derecho') ? 'white' : '#4b5563'} pointerEvents="none">Brazo Der</text>
+
+          <path d="M-14 270 L-14 386 C-14 396,-8 402,0 402 C8 402,14 396,14 386 L14 270 C6 274,-6 274,-14 270Z"
+            fill={fill('Pierna izquierda')} stroke={stroke('Pierna izquierda')} strokeWidth="2"
+            onClick={() => onToggle('Pierna izquierda')} style={{ cursor: 'pointer' }} />
+          <text x="0" y="340" textAnchor="middle" fontSize="8" fill={isSelected('Pierna izquierda') ? 'white' : '#4b5563'} pointerEvents="none">Pierna Izq</text>
+
+          <path d="M12 270 L12 386 C12 396,6 402,0 402 C-6 402,-12 396,-12 386 L-12 270 C-6 274,6 274,12 270Z"
+            fill={fill('Pierna derecha')} stroke={stroke('Pierna derecha')} strokeWidth="2"
+            onClick={() => onToggle('Pierna derecha')} style={{ cursor: 'pointer' }} />
+          <text x="0" y="400" textAnchor="middle" fontSize="8" fill={isSelected('Pierna derecha') ? 'white' : '#4b5563'} pointerEvents="none">Pierna Der</text>
+        </g>
       </svg>
     </Box>
   )
