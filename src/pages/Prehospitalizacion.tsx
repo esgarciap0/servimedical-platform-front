@@ -159,6 +159,7 @@ type AphForm = {
   liquidos: string
   aseguradora: string
   poliza: string
+  planBeneficios: string
   horaLlegada: string
   transportadoA: string
   departamentoTraslado: string
@@ -219,6 +220,7 @@ const initialForm: AphForm = {
   liquidos: '',
   aseguradora: '',
   poliza: '',
+  planBeneficios: 'SOAT',
   horaLlegada: '',
   transportadoA: '',
   departamentoTraslado: '',
@@ -344,6 +346,10 @@ export function Prehospitalizacion() {
     }
   }
 
+  const handleViewPdf = (id: number) => {
+    window.open(`${API_BASE}/${id}/pdf`, '_blank', 'noopener,noreferrer')
+  }
+
   return (
     <Stack spacing={3}>
       <Breadcrumbs aria-label="breadcrumb">
@@ -419,7 +425,7 @@ export function Prehospitalizacion() {
                         <TableCell>{row.conductor || ''}</TableCell>
                         <TableCell>
                           <Stack direction="row" spacing={0.7} sx={{ alignItems: 'center' }}>
-                            <IconButton size="small" sx={{ bgcolor: '#0d6efd', color: 'white', borderRadius: 1 }}>
+                            <IconButton size="small" onClick={() => handleViewPdf(row.id)} sx={{ bgcolor: '#0d6efd', color: 'white', borderRadius: 1 }}>
                               <VisibilityIcon fontSize="small" />
                             </IconButton>
                             <IconButton size="small" sx={{ bgcolor: '#ffc107', color: 'white', borderRadius: 1 }}>
@@ -587,7 +593,18 @@ function InsuranceTab({ form, updateField }: { form: AphForm; updateField: (fiel
           <Grid size={{ xs: 12, md: 4 }}><FormInput label="Numero Poliza" value={form.poliza} onChange={(value) => updateField('poliza', value)} /></Grid>
           <Grid size={{ xs: 12 }}>
             <Typography sx={{ fontWeight: 800, mb: 1 }}>Plan de Beneficios</Typography>
-            {['SOAT', 'ARL', 'EPS'].map((item) => <FormControlLabel key={item} control={<Radio />} label={item} />)}
+            {['SOAT', 'ARL', 'EPS'].map((item) => (
+              <FormControlLabel
+                key={item}
+                control={
+                  <Radio
+                    checked={form.planBeneficios === item}
+                    onChange={() => updateField('planBeneficios', item)}
+                  />
+                }
+                label={item}
+              />
+            ))}
           </Grid>
         </Grid>
       </Grid>
@@ -803,60 +820,58 @@ function PdfPreview({ form, injuries, procedures }: { form: AphForm; injuries: s
   return (
     <Box sx={{ display: { xs: 'none', xl: 'block' }, bgcolor: '#e5e7eb', borderLeft: '1px solid #cbd5e1', p: 2, overflow: 'auto' }}>
       <Typography sx={{ mb: 1, fontWeight: 800, color: '#075db8' }}>Previsualizacion PDF</Typography>
-      <Paper sx={{ width: 390, minHeight: 560, mx: 'auto', p: 2, bgcolor: 'white', color: '#111827', fontFamily: 'Georgia, serif' }}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: '64px 1fr 80px', alignItems: 'center', gap: 1 }}>
-          <Box component="img" src={logo} alt="Servimedical" sx={{ width: 54 }} />
-          <Typography sx={{ textAlign: 'center', fontSize: 13, fontWeight: 800 }}>ATENCION PRE-HOSPITALARIA</Typography>
-          <Typography sx={{ textAlign: 'right', fontSize: 10 }}>FAPH v1<br />01/03/2025</Typography>
+      <Paper sx={{ width: 390, minHeight: 560, mx: 'auto', p: 2, bgcolor: 'white', color: '#111827', fontFamily: 'Arial, sans-serif' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box component="img" src={logo} alt="Servimedical" sx={{ width: 80, height: 'auto', flex: '0 0 auto' }} />
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 800, lineHeight: 1.1 }}>ATENCION PRE-HOSPITALARIA</Typography>
+            <Typography sx={{ fontSize: 10, lineHeight: 1.1 }}>FAPH v1 - 01/03/2025</Typography>
+          </Box>
+          <Box sx={{ textAlign: 'right', flex: '0 0 auto' }}>
+            <Typography sx={{ fontSize: 10, lineHeight: 1.1 }}>Placa</Typography>
+            <Typography sx={{ fontSize: 10, fontWeight: 700, lineHeight: 1.1 }}>{form.placa || '-'}</Typography>
+          </Box>
         </Box>
         <PreviewBar>DATOS DEL PACIENTE</PreviewBar>
-        <PreviewGrid items={[
-          ['Tipo ID', 'CC'],
-          ['Identificacion', form.documento],
-          ['Nombre', fullName],
-          ['Sexo', form.sexo],
-          ['Traslado', form.tipoTraslado],
-          ['Prioridad', form.prioridad],
-          ['Fecha traslado', form.fechaAccidente],
-          ['Hora traslado', form.horaAccidente],
-          ['Lugar', form.lugarOcurrencia],
-          ['Zona', form.zonaOrigen],
-          ['Departamento', form.departamentoOrigen],
-          ['Municipio', form.municipioOrigen],
+        <PreviewTable rows={[
+          ['Tipo ID', 'CC', 'Identificacion', form.documento],
+          ['Nombres y Apellidos', fullName, 'Sexo', form.sexo],
+          ['Codigo CUPS', form.codigo, 'Prioridad', form.prioridad],
+          ['Traslado', form.traslado, 'Tipo', form.tipoTraslado],
         ]} />
         <PreviewBar>CAUSA EXTERNA</PreviewBar>
         <Typography sx={{ fontSize: 9, minHeight: 18 }}>{form.causaExterna || 'Sin seleccionar'}</Typography>
         <PreviewBar>ANTECEDENTES PERSONALES</PreviewBar>
-        <PreviewGrid items={[
-          ['Alergias', form.alergia],
-          ['Liquidos y alimentos', form.liquidos],
-          ['Medicacion', form.medicacion],
-          ['Patologicos', form.patologicos],
+        <PreviewTable rows={[
+          ['Alergias', form.alergia, 'Liquidos', form.liquidos],
+          ['Medicacion', form.medicacion, 'Patologicos', form.patologicos],
         ]} />
         <PreviewBar>EXAMEN FISICO / GLASGOW</PreviewBar>
-        <PreviewGrid items={[
-          ['PA', form.presion],
-          ['FC', form.frecuenciaCardiaca],
-          ['FR', form.frecuenciaRespiratoria],
-          ['Temp', form.temperatura],
-          ['RO', form.ro],
-          ['RV', form.rv],
-          ['RM', form.rm],
+        <PreviewTable rows={[
+          ['PA', form.presion, 'FC', form.frecuenciaCardiaca],
+          ['FR', form.frecuenciaRespiratoria, 'Temp', form.temperatura],
+          ['RO', form.ro, 'RV', form.rv],
+          ['RM', form.rm, 'Hallazgos', form.hallazgos.slice(0, 40)],
         ]} />
         <PreviewBar>UBICACION DE LAS LESIONES</PreviewBar>
         <Typography sx={{ fontSize: 9, minHeight: 18 }}>{injuries.join(', ') || 'Sin lesiones seleccionadas'}</Typography>
         <PreviewBar>DIAGNOSTICOS / HALLAZGOS</PreviewBar>
-        <Typography sx={{ fontSize: 8.5 }}><strong>Diagnostico CIE10:</strong> {form.diagnosticos}</Typography>
-        <Typography sx={{ fontSize: 8.5, mt: 0.5 }}><strong>Hallazgos:</strong> {form.hallazgos}</Typography>
+        <Box sx={{ border: '1px solid #d1d5db', p: 0.8 }}>
+          <Typography sx={{ fontSize: 8.5, fontWeight: 700, lineHeight: 1.1 }}>Diagnosticos CIE10</Typography>
+          <Typography sx={{ fontSize: 8.5, lineHeight: 1.15 }}>{form.diagnosticos}</Typography>
+        </Box>
+        <Box sx={{ border: '1px solid #d1d5db', p: 0.8, mt: 0.6 }}>
+          <Typography sx={{ fontSize: 8.5, fontWeight: 700, lineHeight: 1.1 }}>Hallazgos</Typography>
+          <Typography sx={{ fontSize: 8.5, lineHeight: 1.15 }}>{form.hallazgos}</Typography>
+        </Box>
         <PreviewBar>PROCEDIMIENTOS REALIZADOS</PreviewBar>
         <Typography sx={{ fontSize: 9 }}>{procedures.join(', ')}</Typography>
         <PreviewBar>MATERIALES Y DROGAS UTILIZADAS</PreviewBar>
         <Typography sx={{ fontSize: 9 }}>{form.materiales}</Typography>
         <PreviewBar>FIRMAS / SELLOS</PreviewBar>
-        <PreviewGrid items={[
-          ['Conductor', form.conductor],
-          ['Encargado traslado', form.paramedico],
-          ['Quien recibe', form.medico],
+        <PreviewTable rows={[
+          ['Conductor', form.conductor, 'Paramedico', form.paramedico],
+          ['Quien recibe', form.medico, 'Doc. Medico', form.documentoMedico],
         ]} />
       </Paper>
     </Box>
@@ -867,15 +882,25 @@ function PreviewBar({ children }: { children: React.ReactNode }) {
   return <Box sx={{ bgcolor: '#9ca3af', color: '#111827', textAlign: 'center', fontSize: 9, fontWeight: 800, mt: 1, py: 0.2 }}>{children}</Box>
 }
 
-function PreviewGrid({ items }: { items: [string, string][] }) {
+function PreviewTable({ rows }: { rows: [string, string, string, string][] }) {
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderLeft: '1px solid #d1d5db', borderTop: '1px solid #d1d5db' }}>
-      {items.map(([label, value]) => (
-        <Box key={`${label}-${value}`} sx={{ borderRight: '1px solid #d1d5db', borderBottom: '1px solid #d1d5db', minHeight: 18, px: 0.5 }}>
-          <Typography sx={{ fontSize: 7, fontWeight: 800 }}>{label}</Typography>
-          <Typography sx={{ fontSize: 8 }}>{value}</Typography>
+    <Box sx={{ display: 'table', width: '100%', borderCollapse: 'collapse', border: '1px solid #d1d5db' }}>
+      {rows.map(([l1, v1, l2, v2]) => (
+        <Box key={`${l1}-${l2}`} sx={{ display: 'table-row' }}>
+          <Cell label={l1} value={v1} />
+          <Cell label={l2} value={v2} />
         </Box>
       ))}
+    </Box>
+  )
+}
+
+function Cell({ label, value }: { label: string; value: string }) {
+  const numeric = value !== '' && /^-?\d+([.,]\d+)?$/.test(value)
+  return (
+    <Box sx={{ display: 'table-cell', width: '25%', border: '1px solid #d1d5db', px: 0.6, py: 0.35, verticalAlign: 'top' }}>
+      <Typography sx={{ fontSize: 7, fontWeight: 800, lineHeight: 1.1 }}>{label}</Typography>
+      <Typography sx={{ fontSize: 8, lineHeight: 1.1, textAlign: numeric ? 'right' : 'left' }}>{value}</Typography>
     </Box>
   )
 }
