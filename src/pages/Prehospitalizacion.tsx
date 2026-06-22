@@ -556,7 +556,8 @@ function PatientTab({ form, updateField }: { form: AphForm; updateField: (field:
         <Grid size={{ xs: 12, md: 2 }}><FormInput label="Hora Accidente" type="time" value={form.horaAccidente} onChange={(value) => updateField('horaAccidente', value)} /></Grid>
         <Grid size={{ xs: 12, md: 3 }}><FormInput label="Lugar de Ocurrencia" value={form.lugarOcurrencia} onChange={(value) => updateField('lugarOcurrencia', value)} /></Grid>
         <Grid size={{ xs: 12, md: 2 }}><FormInput label="Zona Origen" select value={form.zonaOrigen} onChange={(value) => updateField('zonaOrigen', value)} options={['U', 'R']} /></Grid>
-        <Grid size={{ xs: 12, md: 3 }}><FormInput label="Dep.Origen" value={form.departamentoOrigen} onChange={(value) => updateField('departamentoOrigen', value)} /></Grid>
+        <Grid size={{ xs: 12, md: 2 }}><FormInput label="Dep.Origen" value={form.departamentoOrigen} onChange={(value) => updateField('departamentoOrigen', value)} /></Grid>
+        <Grid size={{ xs: 12, md: 3 }}><FormInput label="Municipio Origen" value={form.municipioOrigen} onChange={(value) => updateField('municipioOrigen', value)} /></Grid>
       </Grid>
 
       <SectionTitle>Datos del paciente o victima</SectionTitle>
