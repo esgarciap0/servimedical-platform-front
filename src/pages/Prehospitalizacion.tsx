@@ -5,6 +5,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import {
+  Alert,
   Box,
   Breadcrumbs,
   Button,
@@ -21,6 +22,7 @@ import {
   MenuItem,
   Paper,
   Radio,
+  Snackbar,
   Stack,
   Tab,
   Table,
@@ -285,6 +287,7 @@ export function Prehospitalizacion() {
   const [selectedInjuries, setSelectedInjuries] = useState<string[]>([])
   const [selectedProcedures, setSelectedProcedures] = useState<string[]>([])
   const [rows, setRows] = useState<AphResponse[]>([])
+  const [snackbar, setSnackbar] = useState<{ message: string; fields: string[]; severity: 'error' | 'success' } | null>(null)
 
   useEffect(() => {
     fetch(API_BASE)
@@ -315,7 +318,14 @@ export function Prehospitalizacion() {
       const response = await fetch(API_BASE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       if (!response.ok) {
         const text = await response.text()
-        alert(`Error ${response.status}: ${text.slice(0, 200)}`)
+        let errMsg = 'Error al guardar'
+        let errFields: string[] = []
+        try {
+          const parsed = JSON.parse(text)
+          if (parsed.message) errMsg = parsed.message
+          if (parsed.fields) errFields = parsed.fields
+        } catch { errMsg = text.slice(0, 200) }
+        setSnackbar({ message: errMsg, fields: errFields, severity: 'error' })
         return
       }
       setOpen(false)
@@ -323,17 +333,25 @@ export function Prehospitalizacion() {
       setSelectedInjuries([])
       setSelectedProcedures([])
       setTab(0)
+      setSnackbar({ message: 'Registro guardado exitosamente', fields: [], severity: 'success' })
       const res = await fetch(API_BASE)
       setRows(await res.json())
     } catch (err) {
-      alert('Error de red: ' + (err instanceof Error ? err.message : 'desconocido'))
+      setSnackbar({ message: 'Error de red: ' + (err instanceof Error ? err.message : 'desconocido'), fields: [], severity: 'error' })
     }
   }
 
   const handleDownloadPdf = async (id: number) => {
     try {
       const res = await fetch(`${API_BASE}/${id}/pdf`)
-      if (!res.ok) { alert('Error al descargar PDF'); return }
+      if (!res.ok) {
+        const text = await res.text()
+        let errMsg = 'Error al descargar PDF'
+        let errFields: string[] = []
+        try { const parsed = JSON.parse(text); if (parsed.message) errMsg = parsed.message; if (parsed.fields) errFields = parsed.fields } catch { errMsg = text.slice(0, 200) }
+        setSnackbar({ message: errMsg, fields: errFields, severity: 'error' })
+        return
+      }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -342,7 +360,7 @@ export function Prehospitalizacion() {
       a.click()
       URL.revokeObjectURL(url)
     } catch {
-      alert('Error al descargar PDF')
+      setSnackbar({ message: 'Error al descargar PDF', fields: [], severity: 'error' })
     }
   }
 
@@ -510,6 +528,16 @@ export function Prehospitalizacion() {
           </Box>
         </DialogContent>
       </Dialog>
+      <Snackbar open={!!snackbar} autoHideDuration={6000} onClose={() => setSnackbar(null)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <Alert onClose={() => setSnackbar(null)} severity={snackbar?.severity || 'error'} sx={{ width: '100%', whiteSpace: 'pre-line' }}>
+          {snackbar?.message}
+          {snackbar?.fields && snackbar.fields.length > 0 && (
+            <Box component="ul" sx={{ mt: 0.5, mb: 0, pl: 2 }}>
+              {snackbar.fields.map((f, i) => <li key={i}>{f}</li>)}
+            </Box>
+          )}
+        </Alert>
+      </Snackbar>
     </Stack>
   )
 }
