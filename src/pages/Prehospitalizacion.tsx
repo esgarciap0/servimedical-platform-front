@@ -35,6 +35,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
+import Body, { type ExtendedBodyPart, type Slug } from 'react-muscle-highlighter'
 import logo from '../assets/app-256.png'
 
 type AphResponse = {
@@ -67,6 +68,8 @@ type AphResponse = {
   celularAcompanante: string
   avisarA: string
   parentesco: string
+  numeroParaAvisar: string
+  numeroParaAvisar2: string
   direccion: string
   zonaPaciente: string
   departamento: string
@@ -80,8 +83,10 @@ type AphResponse = {
   planBeneficios: string
   horaLlegada: string
   transportadoA: string
+  codigoHabilitacion: string
   departamentoTraslado: string
   ciudadTransporte: string
+  estadoPaciente: string
   causaExterna: string
   presion: string
   frecuenciaCardiaca: string
@@ -96,7 +101,9 @@ type AphResponse = {
   procedimientos: string[]
   materiales: string
   conductor: string
+  documentoConductor: string
   paramedico: string
+  documentoParamedico: string
   medico: string
   documentoMedico: string
   createdAt: string
@@ -151,6 +158,8 @@ type AphForm = {
   celularAcompanante: string
   avisarA: string
   parentesco: string
+  numeroParaAvisar: string
+  numeroParaAvisar2: string
   direccion: string
   zonaPaciente: string
   departamento: string
@@ -164,8 +173,10 @@ type AphForm = {
   planBeneficios: string
   horaLlegada: string
   transportadoA: string
+  codigoHabilitacion: string
   departamentoTraslado: string
   ciudadTransporte: string
+  estadoPaciente: string
   causaExterna: string
   presion: string
   frecuenciaCardiaca: string
@@ -178,7 +189,9 @@ type AphForm = {
   diagnosticos: string
   materiales: string
   conductor: string
+  documentoConductor: string
   paramedico: string
+  documentoParamedico: string
   medico: string
   documentoMedico: string
 }
@@ -212,6 +225,8 @@ const initialForm: AphForm = {
   celularAcompanante: '',
   avisarA: '',
   parentesco: '',
+  numeroParaAvisar: '',
+  numeroParaAvisar2: '',
   direccion: '',
   zonaPaciente: '',
   departamento: '',
@@ -225,8 +240,10 @@ const initialForm: AphForm = {
   planBeneficios: 'SOAT',
   horaLlegada: '',
   transportadoA: '',
+  codigoHabilitacion: '',
   departamentoTraslado: '',
   ciudadTransporte: '',
+  estadoPaciente: 'VIVO',
   causaExterna: '',
   presion: '',
   frecuenciaCardiaca: '',
@@ -239,7 +256,9 @@ const initialForm: AphForm = {
   diagnosticos: '',
   materiales: '',
   conductor: '',
+  documentoConductor: '',
   paramedico: '',
+  documentoParamedico: '',
   medico: '',
   documentoMedico: '',
 }
@@ -263,6 +282,32 @@ const zonaOptions = ['U', 'R']
 const sexoOptions = ['M', 'F']
 const planBeneficiosOptions = ['SOAT', 'ARL', 'EPS', 'PARTICULAR']
 const ambulanceOptions = ['001', '002', '003']
+
+const bodyPartLabels: Record<Slug, string> = {
+  abs: 'Abdomen',
+  adductors: 'Aductores',
+  ankles: 'Tobillos',
+  biceps: 'Biceps',
+  calves: 'Pantorrillas',
+  chest: 'Torax',
+  deltoids: 'Hombros',
+  feet: 'Pies',
+  forearm: 'Antebrazos',
+  gluteal: 'Cadera / gluteos',
+  hamstring: 'Muslos posteriores',
+  hands: 'Manos',
+  hair: 'Cabello',
+  head: 'Cabeza',
+  knees: 'Rodillas',
+  'lower-back': 'Zona lumbar',
+  neck: 'Cuello',
+  obliques: 'Flancos',
+  quadriceps: 'Muslos anteriores',
+  tibialis: 'Piernas anteriores',
+  trapezius: 'Trapecio',
+  triceps: 'Brazos posteriores',
+  'upper-back': 'Espalda superior',
+}
 
 const procedures = [
   'Oxigenacion',
@@ -288,12 +333,12 @@ const procedures = [
 
 const requiredFieldsByTab: Record<number, (keyof AphForm)[]> = {
   0: ['codigo', 'movil', 'placa', 'traslado', 'tipoTraslado', 'prioridad', 'fechaAccidente', 'horaAccidente', 'lugarOcurrencia', 'zonaOrigen', 'departamentoOrigen', 'municipioOrigen', 'documento', 'primerApellido', 'segundoApellido', 'primerNombre', 'segundoNombre', 'estadoCivil', 'ocupacion', 'sexo', 'fechaNacimiento', 'edad', 'celular', 'telefono', 'acompanante', 'celularAcompanante', 'avisarA', 'parentesco', 'direccion', 'zonaPaciente', 'departamento', 'ciudad', 'alergia', 'patologicos', 'medicacion', 'liquidos'],
-  1: ['aseguradora', 'poliza', 'planBeneficios', 'horaLlegada', 'transportadoA', 'departamentoTraslado', 'ciudadTransporte'],
+  1: ['aseguradora', 'poliza', 'planBeneficios', 'horaLlegada', 'transportadoA', 'departamentoTraslado', 'ciudadTransporte', 'estadoPaciente'],
   2: ['causaExterna'],
   3: ['presion', 'frecuenciaCardiaca', 'frecuenciaRespiratoria', 'temperatura', 'ro', 'rv', 'rm', 'hallazgos', 'diagnosticos'],
   4: [],
   5: ['materiales'],
-  6: ['conductor', 'paramedico', 'medico', 'documentoMedico'],
+  6: ['conductor', 'documentoConductor', 'paramedico', 'documentoParamedico', 'medico', 'documentoMedico'],
 }
 
 export function Prehospitalizacion() {
@@ -351,7 +396,7 @@ export function Prehospitalizacion() {
       if (!res.ok) throw new Error('Error al obtener registro')
       const data: AphResponse = await res.json()
       const { lesiones, procedimientos, createdAt, updatedAt, ...formData } = data
-      setForm(formData as AphForm)
+      setForm({ ...initialForm, ...(formData as AphForm) })
       setSelectedInjuries(lesiones || [])
       setSelectedProcedures(procedimientos || [])
       setFieldErrors({})
@@ -670,6 +715,8 @@ function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateF
             <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Telefono Paciente" value={form.telefono} onChange={(value) => updateField('telefono', value)} error={!!fieldErrors['telefono']} /></Grid>
             <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Avisar a" value={form.avisarA} onChange={(value) => updateField('avisarA', value)} error={!!fieldErrors['avisarA']} /></Grid>
             <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Parentesco" value={form.parentesco} onChange={(value) => updateField('parentesco', value)} error={!!fieldErrors['parentesco']} /></Grid>
+            <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Numero Para Avisar" value={form.numeroParaAvisar} onChange={(value) => updateField('numeroParaAvisar', value)} error={!!fieldErrors['numeroParaAvisar']} /></Grid>
+            <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Numero Para Avisar 2" value={form.numeroParaAvisar2} onChange={(value) => updateField('numeroParaAvisar2', value)} error={!!fieldErrors['numeroParaAvisar2']} /></Grid>
           </Grid>
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
@@ -730,8 +777,10 @@ function InsuranceTab({ form, updateField, fieldErrors }: { form: AphForm; updat
         <Grid container spacing={1}>
           <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Hora de llegada" type="time" value={form.horaLlegada} onChange={(value) => updateField('horaLlegada', value)} error={!!fieldErrors['horaLlegada']} /></Grid>
           <Grid size={{ xs: 12, md: 8 }}><FormInput compact label="Transportado a" value={form.transportadoA} onChange={(value) => updateField('transportadoA', value)} error={!!fieldErrors['transportadoA']} /></Grid>
-          <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Departamento traslado" value={form.departamentoTraslado} onChange={(value) => updateField('departamentoTraslado', value)} error={!!fieldErrors['departamentoTraslado']} /></Grid>
-          <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Ciudad de transporte" value={form.ciudadTransporte} onChange={(value) => updateField('ciudadTransporte', value)} error={!!fieldErrors['ciudadTransporte']} /></Grid>
+          <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Cod. Habilitacion" value={form.codigoHabilitacion} onChange={(value) => updateField('codigoHabilitacion', value)} error={!!fieldErrors['codigoHabilitacion']} /></Grid>
+          <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Departamento traslado" value={form.departamentoTraslado} onChange={(value) => updateField('departamentoTraslado', value)} error={!!fieldErrors['departamentoTraslado']} /></Grid>
+          <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Ciudad de transporte" value={form.ciudadTransporte} onChange={(value) => updateField('ciudadTransporte', value)} error={!!fieldErrors['ciudadTransporte']} /></Grid>
+          <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Estado Paciente" select value={form.estadoPaciente} onChange={(value) => updateField('estadoPaciente', value)} options={['VIVO', 'MUERTO']} error={!!fieldErrors['estadoPaciente']} /></Grid>
         </Grid>
       </Grid>
     </Grid>
@@ -781,11 +830,35 @@ function PhysicalExamTab({ form, updateField, fieldErrors, selectedInjuries, onT
 
       <Grid container spacing={1}>
         <Grid size={{ xs: 12, md: 5 }}>
-          <Paper variant="outlined" sx={{ overflow: 'hidden', borderColor: fieldErrors['lesiones'] ? '#d32f2f' : '#dbe3ee' }}>
+          <Paper variant="outlined" sx={{ overflow: 'hidden', borderColor: fieldErrors['lesiones'] ? '#d32f2f' : '#dbe3ee', bgcolor: '#f8fafc' }}>
             <Box sx={{ px: 1.25, py: 0.75, borderBottom: '1px solid #dbe3ee' }}>
               <SectionTitle compact sx={{ color: fieldErrors['lesiones'] ? '#d32f2f' : undefined }}>Ubique las lesiones *</SectionTitle>
+              <Typography sx={{ fontSize: 11.5, color: '#64748b', fontWeight: 600 }}>
+                Toque una zona para marcarla. Puede seleccionar varias lesiones.
+              </Typography>
             </Box>
-            <BodySelector selected={selectedInjuries} onToggle={onToggleInjury} />
+            <AnatomicalBodySelector selected={selectedInjuries} onToggle={onToggleInjury} />
+            {selectedInjuries.length > 0 && (
+              <Box sx={{ px: 1.25, pb: 1.25, display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                {selectedInjuries.map((area) => (
+                  <Box
+                    key={area}
+                    sx={{
+                      px: 1,
+                      py: 0.4,
+                      borderRadius: 999,
+                      bgcolor: '#dc2626',
+                      color: 'white',
+                      fontSize: 11,
+                      fontWeight: 800,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {formatInjuryLabel(area)}
+                  </Box>
+                ))}
+              </Box>
+            )}
           </Paper>
         </Grid>
         <Grid size={{ xs: 12, md: 7 }}>
@@ -830,8 +903,20 @@ function CrewTab({ form, updateField, fieldErrors }: { form: AphForm; updateFiel
   return (
     <Stack spacing={1}>
       <Grid container spacing={1}>
-        <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Conductor" value={form.conductor} onChange={(value) => updateField('conductor', value)} error={!!fieldErrors['conductor']} /></Grid>
-        <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Paramedico" value={form.paramedico} onChange={(value) => updateField('paramedico', value)} error={!!fieldErrors['paramedico']} /></Grid>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <SectionTitle compact>Datos de tripulacion</SectionTitle>
+          <Stack spacing={1}>
+            <FormInput compact label="Conductor" value={form.conductor} onChange={(value) => updateField('conductor', value)} error={!!fieldErrors['conductor']} />
+            <FormInput compact label="Doc. conductor" value={form.documentoConductor} onChange={(value) => updateField('documentoConductor', value)} error={!!fieldErrors['documentoConductor']} />
+          </Stack>
+        </Grid>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <SectionTitle compact>&nbsp;</SectionTitle>
+          <Stack spacing={1}>
+            <FormInput compact label="Paramedico" value={form.paramedico} onChange={(value) => updateField('paramedico', value)} error={!!fieldErrors['paramedico']} />
+            <FormInput compact label="Doc. paramedico" value={form.documentoParamedico} onChange={(value) => updateField('documentoParamedico', value)} error={!!fieldErrors['documentoParamedico']} />
+          </Stack>
+        </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
           <SectionTitle compact>Datos I.P.S. o prestador</SectionTitle>
           <Stack spacing={1}>
@@ -919,52 +1004,166 @@ function SectionTitle({ children, sx, compact = false }: { children: React.React
   )
 }
 
-function BodySelector({ selected, onToggle }: { selected: string[]; onToggle: (area: string) => void }) {
-  const isSelected = (area: string) => selected.includes(area)
-  const fill = (area: string) => isSelected(area) ? '#dc2626' : '#e5e7eb'
-  const stroke = (area: string) => isSelected(area) ? '#991b1b' : '#9ca3af'
+function makeInjuryKey(view: 'front' | 'back', slug: Slug, side?: 'left' | 'right') {
+  return `${view}:${slug}:${side || 'both'}`
+}
+
+function parseInjuryKey(value: string): { view: 'front' | 'back'; slug: Slug; side?: 'left' | 'right' } | null {
+  const [view, slug, side] = value.split(':')
+  if ((view !== 'front' && view !== 'back') || !slug) return null
+  return {
+    view,
+    slug: slug as Slug,
+    side: side === 'left' || side === 'right' ? side : undefined,
+  }
+}
+
+function formatInjuryLabel(value: string) {
+  const parsed = parseInjuryKey(value)
+  if (!parsed) return value
+
+  const sideLabel = parsed.side === 'left' ? 'izquierda' : parsed.side === 'right' ? 'derecha' : ''
+  const viewLabel = parsed.view === 'back' ? 'posterior' : 'anterior'
+  return [bodyPartLabels[parsed.slug] || parsed.slug, sideLabel, viewLabel].filter(Boolean).join(' ')
+}
+
+function AnatomicalBodySelector({ selected, onToggle }: { selected: string[]; onToggle: (area: string) => void }) {
+  const selectedParts = (view: 'front' | 'back'): ExtendedBodyPart[] =>
+    selected
+      .map(parseInjuryKey)
+      .filter((item): item is NonNullable<ReturnType<typeof parseInjuryKey>> => !!item && item.view === view)
+      .map(({ slug, side }) => ({
+        slug,
+        side,
+        color: '#ff1f1f',
+        styles: { fill: '#ff1f1f', stroke: '#ffffff', strokeWidth: 1.5 },
+      }))
+
+  const handlePress = (view: 'front' | 'back') => (part: ExtendedBodyPart, side?: 'left' | 'right') => {
+    if (!part.slug) return
+    onToggle(makeInjuryKey(view, part.slug, side))
+  }
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', p: 1 }}>
-      <svg width="250" height="360" viewBox="0 0 280 420" role="img" aria-label="Selector de lesiones">
-        <rect width="280" height="420" fill="#ffffff" rx="8" />
-        <text x="140" y="18" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#374151">Toque la zona afectada</text>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr' },
+        alignItems: 'center',
+        justifyItems: 'center',
+        gap: { xs: 0.5, sm: 1 },
+        px: { xs: 0.5, sm: 1 },
+        py: 1,
+        bgcolor: 'white',
+      }}
+    >
+      {(['front', 'back'] as const).map((view) => (
+        <Box
+          key={view}
+          sx={{
+            width: '100%',
+            maxWidth: 175,
+            display: 'flex',
+            justifyContent: 'center',
+            '& svg': { width: '100%', height: 'auto' },
+            '& path': { transition: 'fill 140ms ease' },
+          }}
+        >
+          <Body
+            data={selectedParts(view)}
+            side={view}
+            gender="male"
+            scale={0.82}
+            defaultFill="#050505"
+            defaultStroke="#ffffff"
+            defaultStrokeWidth={1.3}
+            border="none"
+            colors={['#ff1f1f']}
+            onBodyPartPress={handlePress(view)}
+          />
+        </Box>
+      ))}
+    </Box>
+  )
+}
 
-        <g transform="translate(140 0)">
-          <path d="M-22 30 C-22 14,-14 4,0 4 C14 4,22 14,22 30 C22 46,14 52,0 52 C-14 52,-22 46,-22 30Z"
-            fill={fill('Cabeza')} stroke={stroke('Cabeza')} strokeWidth="2"
-            onClick={() => onToggle('Cabeza')} style={{ cursor: 'pointer' }} />
-          <text x="0" y="32" textAnchor="middle" fontSize="8" fill={isSelected('Cabeza') ? 'white' : '#4b5563'} pointerEvents="none">Cabeza</text>
+export function BodySelector({ selected, onToggle }: { selected: string[]; onToggle: (area: string) => void }) {
+  const isSelected = (area: string) => selected.includes(area)
+  const fill = (area: string) => isSelected(area) ? '#ff1f1f' : '#050505'
+  const stroke = (area: string) => isSelected(area) ? '#b91c1c' : '#ffffff'
 
-          <path d="M-30 56 L-28 160 C-28 170,-18 176,0 176 C18 176,28 170,28 160 L30 56Z"
-            fill={fill('Torax')} stroke={stroke('Torax')} strokeWidth="2"
-            onClick={() => onToggle('Torax')} style={{ cursor: 'pointer' }} />
-          <text x="0" y="116" textAnchor="middle" fontSize="8" fill={isSelected('Torax') ? 'white' : '#4b5563'} pointerEvents="none">Torax</text>
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', px: 1, py: 1.5 }}>
+      <svg width="100%" height="auto" viewBox="0 0 480 520" role="img" aria-label="Selector de lesiones" style={{ maxWidth: 420 }}>
+        <style>{'text{display:none}'}</style>
+        <rect width="410" height="500" fill="#f8fafc" rx="12" />
 
-          <path d="M-26 178 L-24 250 C-24 262,-14 268,0 268 C14 268,24 262,24 250 L26 178Z"
-            fill={fill('Abdomen')} stroke={stroke('Abdomen')} strokeWidth="2"
-            onClick={() => onToggle('Abdomen')} style={{ cursor: 'pointer' }} />
-          <text x="0" y="224" textAnchor="middle" fontSize="8" fill={isSelected('Abdomen') ? 'white' : '#4b5563'} pointerEvents="none">Abdomen</text>
+        <text x="120" y="24" textAnchor="middle" fontSize="12" fontWeight="800" fill="#334155">Anterior</text>
+        <text x="320" y="24" textAnchor="middle" fontSize="12" fontWeight="800" fill="#334155">Posterior</text>
 
-          <path d="M-30 56 L-62 130 C-66 140,-60 148,-48 148 L-34 136 L-28 170Z"
-            fill={fill('Brazo izquierdo')} stroke={stroke('Brazo izquierdo')} strokeWidth="2"
-            onClick={() => onToggle('Brazo izquierdo')} style={{ cursor: 'pointer' }} />
-          <text x="-48" y="108" textAnchor="middle" fontSize="7" fill={isSelected('Brazo izquierdo') ? 'white' : '#4b5563'} pointerEvents="none">Brazo Izq</text>
+        <g transform="translate(42 46)">
+          <g transform="translate(75 0)">
+            <path d="M-20 18 C-20 8,-11 0,0 0 C11 0,20 8,20 18 C20 38,11 48,0 48 C-11 48,-20 38,-20 18Z"
+              fill={fill('Cabeza')} stroke={stroke('Cabeza')} strokeWidth="2" onClick={() => onToggle('Cabeza')} style={{ cursor: 'pointer' }} />
+          </g>
+          <path d="M35 54 L75 54 L82 160 L68 230 L42 230 L28 160Z"
+            fill={fill('Torax')} stroke={stroke('Torax')} strokeWidth="2.2" onClick={() => onToggle('Torax')} style={{ cursor: 'pointer' }} />
+          <path d="M34 160 L76 160 L80 228 C80 246,70 258,55 262 C40 258,30 246,30 228Z"
+            fill={fill('Abdomen')} stroke={stroke('Abdomen')} strokeWidth="2.2" onClick={() => onToggle('Abdomen')} style={{ cursor: 'pointer' }} />
+          <path d="M18 60 L36 84 L34 154 L16 164 L5 140 L8 100Z"
+            fill={fill('Brazo izquierdo')} stroke={stroke('Brazo izquierdo')} strokeWidth="2.2" onClick={() => onToggle('Brazo izquierdo')} style={{ cursor: 'pointer' }} />
+          <path d="M74 60 L92 100 L95 140 L84 164 L66 154 L64 84Z"
+            fill={fill('Brazo derecho')} stroke={stroke('Brazo derecho')} strokeWidth="2.2" onClick={() => onToggle('Brazo derecho')} style={{ cursor: 'pointer' }} />
+          <path d="M39 262 L50 262 L48 360 L42 405 C41 414,34 418,28 418 C22 418,18 412,19 404 L25 324 L18 286 C16 274,23 264,39 262Z"
+            fill={fill('Pierna izquierda')} stroke={stroke('Pierna izquierda')} strokeWidth="2.2" onClick={() => onToggle('Pierna izquierda')} style={{ cursor: 'pointer' }} />
+          <path d="M60 262 L71 264 C87 266,94 276,92 288 L85 324 L91 404 C92 412,88 418,82 418 C76 418,69 414,68 405 L62 360Z"
+            fill={fill('Pierna derecha')} stroke={stroke('Pierna derecha')} strokeWidth="2.2" onClick={() => onToggle('Pierna derecha')} style={{ cursor: 'pointer' }} />
+          <text x="55" y="130" textAnchor="middle" fontSize="9" fontWeight="700" fill={isSelected('Torax') ? '#fff' : '#cbd5e1'} pointerEvents="none">Tórax</text>
+          <g pointerEvents="none" fill="none" stroke="#ffffff" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3">
+            <path d="M45 104 L55 178 L66 208 L78 178 L88 104" />
+            <path d="M35 122 L66 112 L97 122" />
+            <path d="M40 144 L66 134 L92 144" />
+            <path d="M38 169 L66 158 L94 169" />
+            <path d="M44 194 L66 185 L87 194" />
+            <path d="M40 222 L66 244 L91 222" />
+            <path d="M36 284 L66 316 L94 284" />
+            <path d="M50 274 L43 382 M81 274 L90 382" />
+            <path d="M28 421 L52 421 M78 421 L102 421" />
+          </g>
+        </g>
 
-          <path d="M30 56 L62 130 C66 140,60 148,48 148 L34 136 L28 170Z"
-            fill={fill('Brazo derecho')} stroke={stroke('Brazo derecho')} strokeWidth="2"
-            onClick={() => onToggle('Brazo derecho')} style={{ cursor: 'pointer' }} />
-          <text x="48" y="108" textAnchor="middle" fontSize="7" fill={isSelected('Brazo derecho') ? 'white' : '#4b5563'} pointerEvents="none">Brazo Der</text>
-
-          <path d="M-14 270 L-14 386 C-14 396,-8 402,0 402 C8 402,14 396,14 386 L14 270 C6 274,-6 274,-14 270Z"
-            fill={fill('Pierna izquierda')} stroke={stroke('Pierna izquierda')} strokeWidth="2"
-            onClick={() => onToggle('Pierna izquierda')} style={{ cursor: 'pointer' }} />
-          <text x="0" y="340" textAnchor="middle" fontSize="8" fill={isSelected('Pierna izquierda') ? 'white' : '#4b5563'} pointerEvents="none">Pierna Izq</text>
-
-          <path d="M12 270 L12 386 C12 396,6 402,0 402 C-6 402,-12 396,-12 386 L-12 270 C-6 274,6 274,12 270Z"
-            fill={fill('Pierna derecha')} stroke={stroke('Pierna derecha')} strokeWidth="2"
-            onClick={() => onToggle('Pierna derecha')} style={{ cursor: 'pointer' }} />
-          <text x="0" y="400" textAnchor="middle" fontSize="8" fill={isSelected('Pierna derecha') ? 'white' : '#4b5563'} pointerEvents="none">Pierna Der</text>
+        <g transform="translate(252 46)">
+          <path d="M55 0 C67 0,76 8,76 18 C76 38,67 48,55 48 C43 48,34 38,34 18 C34 8,43 0,55 0Z"
+            fill={fill('Cabeza posterior')} stroke={stroke('Cabeza posterior')} strokeWidth="2" onClick={() => onToggle('Cabeza posterior')} style={{ cursor: 'pointer' }} />
+          <path d="M35 54 L75 54 L82 154 L67 166 L56 160 L43 166 L28 154Z"
+            fill={fill('Espalda')} stroke={stroke('Espalda')} strokeWidth="2.2" onClick={() => onToggle('Espalda')} style={{ cursor: 'pointer' }} />
+          <path d="M35 154 L75 154 L80 213 L56 223 L30 213Z"
+            fill={fill('Zona lumbar')} stroke={stroke('Zona lumbar')} strokeWidth="2.2" onClick={() => onToggle('Zona lumbar')} style={{ cursor: 'pointer' }} />
+          <path d="M18 60 L35 90 L32 158 L15 166 L5 142 L9 100Z"
+            fill={fill('Brazo izquierdo posterior')} stroke={stroke('Brazo izquierdo posterior')} strokeWidth="2.2" onClick={() => onToggle('Brazo izquierdo posterior')} style={{ cursor: 'pointer' }} />
+          <path d="M76 60 L94 100 L98 142 L88 166 L71 158 L68 90Z"
+            fill={fill('Brazo derecho posterior')} stroke={stroke('Brazo derecho posterior')} strokeWidth="2.2" onClick={() => onToggle('Brazo derecho posterior')} style={{ cursor: 'pointer' }} />
+          <path d="M42 223 L52 223 L52 328 L48 405 C47 414,40 418,34 418 C28 418,23 412,24 404 L29 330 L21 289 C19 277,25 226,42 223Z"
+            fill={fill('Pierna izquierda posterior')} stroke={stroke('Pierna izquierda posterior')} strokeWidth="2.2" onClick={() => onToggle('Pierna izquierda posterior')} style={{ cursor: 'pointer' }} />
+          <path d="M58 223 L68 226 C85 228,91 277,89 289 L81 330 L86 404 C87 412,83 418,77 418 C71 418,64 414,63 405 L59 328Z"
+            fill={fill('Pierna derecha posterior')} stroke={stroke('Pierna derecha posterior')} strokeWidth="2.2" onClick={() => onToggle('Pierna derecha posterior')} style={{ cursor: 'pointer' }} />
+          <text x="55" y="130" textAnchor="middle" fontSize="8.5" fontWeight="700" fill={isSelected('Cabeza posterior') ? '#fff' : '#cbd5e1'} pointerEvents="none">Cabeza</text>
+          <text x="55" y="126" textAnchor="middle" fontSize="9" fontWeight="700" fill={isSelected('Espalda') ? '#fff' : '#cbd5e1'} pointerEvents="none">Espalda</text>
+          <text x="55" y="193" textAnchor="middle" fontSize="9" fontWeight="700" fill={isSelected('Zona lumbar') ? '#fff' : '#cbd5e1'} pointerEvents="none">Lumbar</text>
+          <text x="20" y="128" textAnchor="middle" fontSize="7.5" fontWeight="700" fill={isSelected('Brazo izquierdo posterior') ? '#fff' : '#cbd5e1'} pointerEvents="none">Brazo Izq</text>
+          <text x="89" y="128" textAnchor="middle" fontSize="7.5" fontWeight="700" fill={isSelected('Brazo derecho posterior') ? '#fff' : '#cbd5e1'} pointerEvents="none">Brazo Der</text>
+          <text x="33" y="339" textAnchor="middle" fontSize="7.5" fontWeight="700" fill={isSelected('Pierna izquierda posterior') ? '#fff' : '#cbd5e1'} pointerEvents="none">Pierna Izq</text>
+          <text x="77" y="339" textAnchor="middle" fontSize="7.5" fontWeight="700" fill={isSelected('Pierna derecha posterior') ? '#fff' : '#cbd5e1'} pointerEvents="none">Pierna Der</text>
+          <g pointerEvents="none" fill="none" stroke="#ffffff" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3">
+            <path d="M52 96 L72 111 L94 96" />
+            <path d="M42 124 L72 111 L104 125" />
+            <path d="M37 161 L72 184 L110 161" />
+            <path d="M42 203 L73 224 L105 203" />
+            <path d="M49 272 L73 289 L98 272" />
+            <path d="M38 309 L73 330 L108 309" />
+            <path d="M56 350 L60 410 M90 350 L86 410" />
+            <path d="M48 426 L69 426 M77 426 L98 426" />
+          </g>
         </g>
       </svg>
     </Box>
