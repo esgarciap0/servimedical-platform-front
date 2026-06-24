@@ -1,10 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { toPng } from 'html-to-image'
-import AddBoxIcon from '@mui/icons-material/AddBox'
-import CloseIcon from '@mui/icons-material/Close'
-import EditIcon from '@mui/icons-material/Edit'
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
-import VisibilityIcon from '@mui/icons-material/Visibility'
+import { AddBoxIcon, CloseIcon, EditIcon, PageviewIcon, PictureAsPdfIcon } from '../icons/AppIcons'
 import {
   Alert,
   Box,
@@ -13,12 +9,14 @@ import {
   Card,
   CardContent,
   Checkbox,
+  Chip,
   Dialog,
   DialogContent,
   DialogTitle,
   FormControlLabel,
   Grid,
   IconButton,
+  LinearProgress,
   Link,
   MenuItem,
   Paper,
@@ -34,10 +32,12 @@ import {
   TableRow,
   Tabs,
   TextField,
+  Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import Body, { type ExtendedBodyPart, type Slug } from 'react-muscle-highlighter'
-import { generatePdf } from '../services/pdfGenerator'
 import logo from '../assets/app-256.png'
 
 type AphResponse = {
@@ -178,21 +178,6 @@ type AphForm = {
   documentoParamedico: string
   medico: string
   documentoMedico: string
-}
-
-async function loadImageToBase64(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url)
-    const blob = await res.blob()
-
-    return new Promise((resolve) => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result as string)
-      reader.readAsDataURL(blob)
-    })
-  } catch {
-    return null
-  }
 }
 
 const API_BASE = 'http://localhost:8080/api/aph'
@@ -405,6 +390,8 @@ const requiredFieldsByTab: Record<number, (keyof AphForm)[]> = {
 }
 
 export function Prehospitalizacion() {
+  const theme = useTheme()
+  const isCompactScreen = useMediaQuery(theme.breakpoints.down('md'))
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState(0)
   const [editId, setEditId] = useState<number | null>(null)
@@ -413,8 +400,35 @@ export function Prehospitalizacion() {
   const [selectedProcedures, setSelectedProcedures] = useState<string[]>([])
   const [lesionesImagen, setLesionesImagen] = useState<string | null>(null)
   const [rows, setRows] = useState<AphResponse[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({})
   const [snackbar, setSnackbar] = useState<{ message: string; fields: string[]; severity: 'error' | 'success' } | null>(null)
+
+  const filteredRows = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase()
+
+    if (!query) {
+      return rows
+    }
+
+    return rows.filter((row) => [
+      row.codigo,
+      row.movil,
+      row.placa,
+      row.aseguradora,
+      row.documento,
+      row.primerNombre,
+      row.segundoNombre,
+      row.primerApellido,
+      row.segundoApellido,
+      row.lugarOcurrencia,
+      row.transportadoA,
+      row.paramedico,
+      row.conductor,
+    ].some((value) => String(value || '').toLowerCase().includes(query)))
+  }, [rows, searchTerm])
+
+  const progress = Math.round(((tab + 1) / tabs.length) * 100)
 
   useEffect(() => {
     fetch(API_BASE)
@@ -491,34 +505,45 @@ export function Prehospitalizacion() {
   }
 
   const captureBodyMapImage = async (): Promise<string | null> => {
-    const element =
-        document.getElementById('aph-body-capture-pdf') ||
-        document.getElementById('aph-body-visible')
+    const element = document.getElementById('aph-body-visible')
 
     if (!element) {
-      console.warn('APH body capture element not found')
+      console.warn('APH visible body element not found')
       return null
     }
 
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
-    await new Promise<void>((resolve) => setTimeout(resolve, 250))
-
-    const width = element.scrollWidth || element.offsetWidth
-    const height = element.scrollHeight || element.offsetHeight
-
-    return await toPng(element, {
-      cacheBust: true,
-      pixelRatio: 4,
-      backgroundColor: '#ffffff',
-      width,
-      height,
-      style: {
-        width: `${width}px`,
-        height: `${height}px`,
-        transform: 'none',
-        transformOrigin: 'top left',
-      },
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
     })
+
+    try {
+      await document.fonts?.ready
+    } catch {
+      // Font loading is not critical for the body image capture.
+    }
+
+    const width = Math.max(element.scrollWidth, element.offsetWidth, 540)
+    const height = Math.max(element.scrollHeight, element.offsetHeight, 335)
+
+    try {
+      return await toPng(element, {
+        cacheBust: true,
+        pixelRatio: 4,
+        backgroundColor: '#ffffff',
+        width,
+        height,
+        style: {
+          width: `${width}px`,
+          height: `${height}px`,
+          transform: 'none',
+          transformOrigin: 'top left',
+          overflow: 'visible',
+        },
+      })
+    } catch (error) {
+      console.error('Error capturing APH body image', error)
+      return null
+    }
   }
 
   const handleNext = async () => {
@@ -526,6 +551,16 @@ export function Prehospitalizacion() {
 
     if (tab === 3) {
       const image = await captureBodyMapImage()
+
+      if (!image) {
+        setSnackbar({
+          message: 'No se pudo capturar la imagen de ubicacion de lesiones. Intenta nuevamente.',
+          fields: [],
+          severity: 'error',
+        })
+        return
+      }
+
       setLesionesImagen(image)
     }
 
@@ -557,8 +592,22 @@ export function Prehospitalizacion() {
   }
 
   const handleSave = async () => {
-    const finalLesionesImagen = lesionesImagen || (await captureBodyMapImage())
 
+    let finalLesionesImagen = lesionesImagen
+
+    if (!finalLesionesImagen && tab === 3) {
+      finalLesionesImagen = await captureBodyMapImage()
+    }
+
+    if (!finalLesionesImagen) {
+      setTab(3)
+      setSnackbar({
+        message: 'No se encontro la imagen de ubicacion de lesiones. Revisa el paso Examen fisico y vuelve a guardar.',
+        fields: [],
+        severity: 'error',
+      })
+      return
+    }
     const body = {
       ...form,
       lesiones: selectedInjuries,
@@ -614,22 +663,17 @@ export function Prehospitalizacion() {
     }
   }
 
-  const generatePdfFromData = async (data: AphResponse): Promise<Uint8Array> => {
-    const logoBase64 = await loadImageToBase64(logo)
+  const fetchPdfBlob = async (id: number): Promise<Blob> => {
+    const response = await fetch(`${API_BASE}/${id}/pdf`)
 
-    return generatePdf(
-        {
-          ...data,
-          lesiones: data.lesiones || [],
-          lesionesImagen: data.lesionesImagen || null,
-          procedimientos: data.procedimientos || [],
-        },
-        logoBase64 || undefined,
-    )
+    if (!response.ok) {
+      throw new Error('No se pudo generar el PDF')
+    }
+
+    return response.blob()
   }
 
-  const openPdfBlob = (bytes: Uint8Array, filename: string) => {
-    const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' })
+  const downloadBlob = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
 
@@ -642,16 +686,8 @@ export function Prehospitalizacion() {
 
   const handleDownloadPdf = async (id: number) => {
     try {
-      const res = await fetch(`${API_BASE}/${id}`)
-
-      if (!res.ok) {
-        throw new Error('Error al obtener datos')
-      }
-
-      const data: AphResponse = await res.json()
-      const pdfBytes = await generatePdfFromData(data)
-
-      openPdfBlob(pdfBytes, `APH-${id}.pdf`)
+      const blob = await fetchPdfBlob(id)
+      downloadBlob(blob, `APH-${id}.pdf`)
     } catch {
       setSnackbar({ message: 'Error al descargar PDF', fields: [], severity: 'error' })
     }
@@ -659,15 +695,7 @@ export function Prehospitalizacion() {
 
   const handleViewPdf = async (id: number) => {
     try {
-      const res = await fetch(`${API_BASE}/${id}`)
-
-      if (!res.ok) {
-        throw new Error('Error al obtener datos')
-      }
-
-      const data: AphResponse = await res.json()
-      const pdfBytes = await generatePdfFromData(data)
-      const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' })
+      const blob = await fetchPdfBlob(id)
       const url = URL.createObjectURL(blob)
 
       window.open(url, '_blank', 'noopener,noreferrer')
@@ -695,105 +723,162 @@ export function Prehospitalizacion() {
   }
 
   return (
-      <Stack spacing={3}>
+      <Stack spacing={{ xs: 2, md: 3 }}>
         <Breadcrumbs aria-label="breadcrumb">
           <Link underline="hover" color="primary" href="/">
             Inicio
           </Link>
-          <Typography color="text.secondary">aph</Typography>
+          <Typography color="text.secondary">APH</Typography>
         </Breadcrumbs>
 
-        <Card sx={{ overflow: 'hidden', borderRadius: 1.5 }}>
-          <Box sx={{ bgcolor: '#0f766e', color: 'white', px: 2, py: 1.2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: 18, letterSpacing: 0.3 }}>
-              GESTION APH
-            </Typography>
+        <Card
+            sx={{
+              overflow: 'hidden',
+              borderRadius: 2.5,
+              maxWidth: 1280,
+              width: '100%',
+              mx: 'auto',
+            }}
+        >
+          <Box
+              sx={{
+                px: { xs: 2, md: 2.25 },
+                py: { xs: 1.25, md: 1.5 },
+                color: 'white',
+                background: 'linear-gradient(135deg, #0f766e 0%, #075db8 100%)',
+              }}
+          >
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ justifyContent: 'space-between' }}>
+              <Box>
+                <Typography sx={{ fontWeight: 900, fontSize: { xs: 20, md: 22 }, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+                  Gestion APH
+                </Typography>
+                <Typography sx={{ fontSize: { xs: 13, md: 14 }, opacity: 0.88 }}>
+                  Registro, consulta y generacion profesional del formato de atencion prehospitalaria.
+                </Typography>
+              </Box>
+
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                <Chip label={`${rows.length} registros`} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.18)', color: 'white', fontWeight: 800 }} />
+                <Chip label="PDF APH" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.18)', color: 'white', fontWeight: 800 }} />
+              </Stack>
+            </Stack>
           </Box>
 
-          <CardContent sx={{ p: 2 }}>
-            <Stack spacing={1.5}>
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
+          <CardContent sx={{ p: { xs: 1.25, md: 1.5 } }}>
+            <Stack spacing={2}>
+              <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'auto auto 1fr minmax(240px, 320px)' },
+                    alignItems: 'center',
+                    gap: 1,
+                  }}
+              >
                 <Button
                     variant="contained"
                     startIcon={<AddBoxIcon />}
                     onClick={openNewAph}
-                    size="small"
                     sx={{
                       bgcolor: '#0f766e',
+                      minHeight: 40,
+                      fontWeight: 800,
                       '&:hover': { bgcolor: '#115e59' },
-                      width: { xs: '100%', sm: 'auto' },
                     }}
                 >
                   Nuevo APH
                 </Button>
 
                 <Button
-                    variant="contained"
+                    variant="outlined"
                     color="inherit"
-                    size="small"
-                    sx={{ bgcolor: '#334155', color: 'white', width: { xs: '100%', sm: 'auto' } }}
+                    sx={{ borderColor: '#cbd5e1', color: '#334155', minHeight: 40, fontWeight: 800 }}
                 >
                   Exportar a Excel
                 </Button>
+
+                <Box />
+
+                <TextField
+                    size="small"
+                    label="Buscar registro"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Paciente, documento, ambulancia..."
+                    sx={{
+                      '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: '#f8fafc' },
+                    }}
+                />
               </Box>
 
-              <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    justifyContent: 'flex-end',
-                    alignItems: { xs: 'stretch', sm: 'center' },
-                    gap: 1,
-                  }}
-              >
-                <Typography sx={{ fontSize: 13, fontWeight: 700 }}>Buscar</Typography>
-                <TextField size="small" sx={{ width: { xs: '100%', sm: 220 } }} />
+              <Box sx={{ display: { xs: 'grid', md: 'none' }, gap: 1 }}>
+                {filteredRows.length === 0 ? (
+                    <Paper variant="outlined" sx={{ p: 3, textAlign: 'center', color: 'text.secondary', borderRadius: 2 }}>
+                      No hay registros disponibles
+                    </Paper>
+                ) : (
+                    filteredRows.map((row) => (
+                        <AphMobileCard
+                            key={row.id}
+                            row={row}
+                            onView={() => handleViewPdf(row.id)}
+                            onEdit={() => handleEdit(row.id)}
+                            onDownload={() => handleDownloadPdf(row.id)}
+                        />
+                    ))
+                )}
               </Box>
 
-              <TableContainer sx={{ border: '1px solid #d9dee7', overflowX: 'auto' }}>
-                <Table size="small" sx={{ minWidth: 1300 }}>
+              <TableContainer sx={{ display: { xs: 'none', md: 'block' }, border: '1px solid #d9dee7', borderRadius: 2, overflowX: 'auto' }}>
+                <Table size="small" sx={{ minWidth: 1280 }}>
                   <TableHead>
                     <TableRow sx={{ background: 'linear-gradient(#ffffff, #f4f6f8)' }}>
                       {columns.map((column) => (
-                          <TableCell key={column} sx={{ fontWeight: 800, fontSize: 13, whiteSpace: 'nowrap', py: 1 }}>
-                            {column} <Box component="span" sx={{ color: '#aeb4bd' }}>↕</Box>
+                          <TableCell key={column} sx={{ fontWeight: 900, fontSize: 13, whiteSpace: 'nowrap', py: 1.1, color: '#334155' }}>
+                            {column}
                           </TableCell>
                       ))}
                     </TableRow>
                   </TableHead>
 
                   <TableBody>
-                    {rows.length === 0 ? (
+                    {filteredRows.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={columns.length} align="center" sx={{ py: 6, color: 'text.secondary' }}>
                             No hay registros disponibles
                           </TableCell>
                         </TableRow>
                     ) : (
-                        rows.map((row) => (
-                            <TableRow key={row.id} hover>
-                              <TableCell>{row.codigo || row.id}</TableCell>
+                        filteredRows.map((row) => (
+                            <TableRow key={row.id} hover sx={{ '&:last-child td': { borderBottom: 0 } }}>
+                              <TableCell sx={{ fontWeight: 800 }}>{row.codigo || row.id}</TableCell>
                               <TableCell>{row.createdAt?.split('T')[0] || ''}</TableCell>
                               <TableCell>{row.movil || ''}</TableCell>
                               <TableCell>{row.aseguradora || ''}</TableCell>
-                              <TableCell>{row.documento?.length === 10 ? 'CC' : row.documento?.length === 11 ? 'TI' : ''}</TableCell>
+                              <TableCell>{getDocumentType(row.documento)}</TableCell>
                               <TableCell>{row.documento || ''}</TableCell>
-                              <TableCell sx={{ maxWidth: 210 }}>{`${row.primerNombre || ''} ${row.primerApellido || ''}`}</TableCell>
+                              <TableCell sx={{ maxWidth: 210 }}>{getPatientName(row)}</TableCell>
                               <TableCell sx={{ maxWidth: 260 }}>{row.lugarOcurrencia || ''}</TableCell>
                               <TableCell sx={{ maxWidth: 230 }}>{row.transportadoA || ''}</TableCell>
                               <TableCell>{row.paramedico || ''}</TableCell>
                               <TableCell>{row.conductor || ''}</TableCell>
                               <TableCell>
                                 <Stack direction="row" spacing={0.7} sx={{ alignItems: 'center' }}>
-                                  <IconButton size="small" onClick={() => handleViewPdf(row.id)} sx={{ bgcolor: '#0d6efd', color: 'white', borderRadius: 1 }}>
-                                    <VisibilityIcon fontSize="small" />
-                                  </IconButton>
-                                  <IconButton size="small" onClick={() => handleEdit(row.id)} sx={{ bgcolor: '#ffc107', color: 'white', borderRadius: 1 }}>
-                                    <EditIcon fontSize="small" />
-                                  </IconButton>
-                                  <IconButton size="small" onClick={() => handleDownloadPdf(row.id)} sx={{ color: '#dc3545', borderRadius: 1 }}>
-                                    <PictureAsPdfIcon fontSize="small" />
-                                  </IconButton>
+                                  <Tooltip title="Ver PDF">
+                                    <IconButton size="small" onClick={() => handleViewPdf(row.id)} sx={{ bgcolor: '#0d6efd', color: 'white', borderRadius: 1, '&:hover': { bgcolor: '#0b5ed7' } }}>
+                                      <PageviewIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                  <Tooltip title="Editar">
+                                    <IconButton size="small" onClick={() => handleEdit(row.id)} sx={{ bgcolor: '#f59e0b', color: 'white', borderRadius: 1, '&:hover': { bgcolor: '#d97706' } }}>
+                                      <EditIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                  <Tooltip title="Descargar PDF">
+                                    <IconButton size="small" onClick={() => handleDownloadPdf(row.id)} sx={{ color: '#dc3545', borderRadius: 1 }}>
+                                      <PictureAsPdfIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
                                 </Stack>
                               </TableCell>
                             </TableRow>
@@ -806,49 +891,68 @@ export function Prehospitalizacion() {
           </CardContent>
         </Card>
 
-        <Dialog open={open} onClose={closeDialog} fullScreen>
-          <DialogTitle sx={{ bgcolor: '#0f766e', color: 'white', py: 1, pr: 7 }}>
-            <Typography sx={{ fontWeight: 800, fontSize: { xs: 15, sm: 18, md: 20 } }}>
-              {editId ? `Editar APH #${editId}` : 'Registrar formato APH'}
-            </Typography>
+        <Dialog
+            open={open}
+            onClose={closeDialog}
+            fullScreen={isCompactScreen}
+            fullWidth={false}
+            maxWidth={false}
+            slotProps={{
+              paper: {
+                sx: {
+                  width: { xs: '100%', md: 'min(1180px, calc(100vw - 64px))' },
+                  maxHeight: { xs: '100%', md: 'calc(100vh - 48px)' },
+                  borderRadius: { xs: 0, md: '22px' },
+                  overflow: 'hidden',
+                  boxShadow: '0 24px 70px rgba(15, 23, 42, 0.35)',
+                },
+              },
+              backdrop: {
+                sx: {
+                  bgcolor: 'rgba(15, 23, 42, 0.72)',
+                  backdropFilter: 'blur(4px)',
+                },
+              },
+            }}
+        >
+          <DialogTitle sx={{ bgcolor: '#0f766e', color: 'white', p: 0 }}>
+            <Box sx={{ px: { xs: 1.5, md: 1.75 }, py: { xs: 0.9, md: 1 }, pr: 6 }}>
+              <Typography sx={{ fontWeight: 900, fontSize: { xs: 16, md: 18 }, lineHeight: 1.1 }}>
+                {editId ? `Editar APH #${editId}` : 'Registrar formato APH'}
+              </Typography>
+              <Typography sx={{ opacity: 0.85, fontSize: { xs: 12, md: 12.5 } }}>
+                Paso {tab + 1} de {tabs.length}: {tabs[tab]}
+              </Typography>
+            </Box>
 
             <IconButton
                 aria-label="Cerrar"
                 onClick={closeDialog}
-                sx={{ position: 'absolute', right: { xs: 8, md: 16 }, top: { xs: 6, md: 10 }, color: 'white' }}
+                sx={{ position: 'absolute', right: { xs: 8, md: 16 }, top: { xs: 8, md: 12 }, color: 'white' }}
             >
-              <CloseIcon fontSize="large" />
+              <CloseIcon />
             </IconButton>
+            <LinearProgress variant="determinate" value={progress} sx={{ height: 4, bgcolor: 'rgba(255,255,255,0.18)', '& .MuiLinearProgress-bar': { bgcolor: '#facc15' } }} />
           </DialogTitle>
 
           <DialogContent sx={{ p: 0, bgcolor: '#f8fafc' }}>
-            <Box
-                id="aph-body-capture-pdf"
-                sx={{
-                  position: 'fixed',
-                  left: 0,
-                  top: 0,
-                  width: 540,
-                  minHeight: 335,
-                  bgcolor: 'white',
-                  p: 0,
-                  m: 0,
-                  overflow: 'visible',
-                  pointerEvents: 'none',
-                  zIndex: -1,
-                }}
-            >
-              <InjuryCaptureForPdf selected={selectedInjuries} />
-            </Box>
+
 
             <Box
                 sx={{
                   display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', xl: 'minmax(0, 1fr) 320px' },
-                  minHeight: 'calc(100vh - 56px)',
+                  gridTemplateColumns: '1fr',
+                  maxHeight: { xs: 'calc(100dvh - 70px)', md: 'calc(100vh - 104px)' },
+                  overflow: 'hidden',
                 }}
             >
-              <Box sx={{ p: 1, overflow: 'auto' }}>
+              <Box
+                  sx={{
+                    p: { xs: 1, md: 1.25 },
+                    overflow: 'auto',
+                    maxHeight: { xs: 'calc(100dvh - 70px)', md: 'calc(100vh - 104px)' },
+                  }}
+              >
                 <Tabs
                     value={tab}
                     onChange={(_, value) => setTab(value)}
@@ -856,14 +960,16 @@ export function Prehospitalizacion() {
                     scrollButtons="auto"
                     sx={{
                       bgcolor: 'white',
-                      borderBottom: '1px solid #dbe3ee',
+                      border: '1px solid #dbe3ee',
+                      borderRadius: 2,
                       mb: 1,
-                      minHeight: 36,
+                      minHeight: 34,
+                      '& .MuiTabs-indicator': { height: 2.5, borderRadius: 3 },
                       '& .MuiTab-root': {
-                        minHeight: 36,
+                        minHeight: 34,
                         py: 0.25,
-                        px: 1,
-                        fontSize: 12,
+                        px: { xs: 1, md: 1.35 },
+                        fontSize: { xs: 11.5, md: 12 },
                         textTransform: 'none',
                         fontWeight: 800,
                       },
@@ -874,7 +980,15 @@ export function Prehospitalizacion() {
                   ))}
                 </Tabs>
 
-                <Paper sx={{ p: { xs: 1, md: 1.25 }, borderRadius: 2, border: '1px solid #dbe3ee' }} elevation={1}>
+                <Paper
+                    sx={{
+                      p: { xs: 1, md: 1.25 },
+                      borderRadius: 2.25,
+                      border: '1px solid #dbe3ee',
+                      boxShadow: '0 8px 24px rgba(15, 23, 42, 0.05)',
+                    }}
+                    elevation={0}
+                >
                   {tab === 0 && <PatientTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
                   {tab === 1 && <InsuranceTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
                   {tab === 2 && <CauseTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
@@ -900,23 +1014,42 @@ export function Prehospitalizacion() {
 
                 <Box
                     sx={{
+                      position: 'sticky',
+                      bottom: 0,
+                      zIndex: 2,
                       display: 'flex',
                       flexDirection: { xs: 'column-reverse', sm: 'row' },
                       justifyContent: 'space-between',
                       gap: 0.75,
                       mt: 1,
+                      p: 0.75,
+                      border: '1px solid #dbe3ee',
+                      borderRadius: 2,
+                      bgcolor: 'rgba(248, 250, 252, 0.96)',
+                      backdropFilter: 'blur(8px)',
                     }}
                 >
                   <Box sx={{ display: 'flex', gap: 1, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', sm: 'auto' } }}>
                     {tab > 0 && (
-                        <Button size="small" variant="outlined" onClick={() => setTab(tab - 1)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => setTab(tab - 1)}
+                            sx={{ minHeight: 32, px: 1.5, fontSize: 12.5, fontWeight: 800, width: { xs: '100%', sm: 'auto' } }}
+                        >
                           ← Anterior
                         </Button>
                     )}
                   </Box>
 
                   <Box sx={{ display: 'flex', gap: 1, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', sm: 'auto' } }}>
-                    <Button size="small" variant="outlined" color="inherit" onClick={closeDialog} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        color="inherit"
+                        onClick={closeDialog}
+                        sx={{ minHeight: 32, px: 1.5, fontSize: 12.5, fontWeight: 800, width: { xs: '100%', sm: 'auto' } }}
+                    >
                       Cancelar
                     </Button>
 
@@ -927,7 +1060,7 @@ export function Prehospitalizacion() {
                             onClick={() => {
                               void handleNext()
                             }}
-                            sx={{ bgcolor: '#075db8', '&:hover': { bgcolor: '#064a94' }, width: { xs: '100%', sm: 'auto' } }}
+                            sx={{ minHeight: 32, px: 1.5, fontSize: 12.5, fontWeight: 800, bgcolor: '#075db8', '&:hover': { bgcolor: '#064a94' }, width: { xs: '100%', sm: 'auto' } }}
                         >
                           Siguiente →
                         </Button>
@@ -940,7 +1073,7 @@ export function Prehospitalizacion() {
                                 void handleSave()
                               }
                             }}
-                            sx={{ bgcolor: '#1f9d49', '&:hover': { bgcolor: '#18823c' }, width: { xs: '100%', sm: 'auto' } }}
+                            sx={{ minHeight: 32, px: 1.5, fontSize: 12.5, fontWeight: 800, bgcolor: '#1f9d49', '&:hover': { bgcolor: '#18823c' }, width: { xs: '100%', sm: 'auto' } }}
                         >
                           Guardar
                         </Button>
@@ -949,7 +1082,9 @@ export function Prehospitalizacion() {
                 </Box>
               </Box>
 
-              <PdfPreview form={form} injuries={selectedInjuries} procedures={selectedProcedures} />
+              <Box sx={{ display: 'none' }}>
+                <PdfPreview form={form} injuries={selectedInjuries} procedures={selectedProcedures} />
+              </Box>
             </Box>
           </DialogContent>
         </Dialog>
@@ -968,6 +1103,81 @@ export function Prehospitalizacion() {
         </Snackbar>
       </Stack>
   )
+}
+
+
+function AphMobileCard({
+                         row,
+                         onView,
+                         onEdit,
+                         onDownload,
+                       }: {
+  row: AphResponse
+  onView: () => void
+  onEdit: () => void
+  onDownload: () => void
+}) {
+  return (
+      <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2.5, bgcolor: 'white' }}>
+        <Stack spacing={1.25}>
+          <Stack direction="row" spacing={1} sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ fontWeight: 900, color: '#0f172a', lineHeight: 1.15 }} noWrap>
+                {getPatientName(row) || 'Paciente sin nombre'}
+              </Typography>
+              <Typography sx={{ color: 'text.secondary', fontSize: 12.5 }}>
+                {getDocumentType(row.documento)} {row.documento || 'Sin documento'}
+              </Typography>
+            </Box>
+            <Chip label={row.codigo || `#${row.id}`} size="small" sx={{ fontWeight: 900, bgcolor: '#e0f2fe', color: '#075985' }} />
+          </Stack>
+
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+            <MobileInfo label="Fecha" value={row.createdAt?.split('T')[0] || '-'} />
+            <MobileInfo label="Ambulancia" value={row.movil || '-'} />
+            <MobileInfo label="Origen" value={row.lugarOcurrencia || '-'} />
+            <MobileInfo label="Destino" value={row.transportadoA || '-'} />
+          </Box>
+
+          <Stack direction="row" spacing={1}>
+            <Button fullWidth size="small" variant="contained" onClick={onView} sx={{ bgcolor: '#0d6efd', fontWeight: 800 }}>
+              Ver
+            </Button>
+            <Button fullWidth size="small" variant="contained" onClick={onEdit} sx={{ bgcolor: '#f59e0b', fontWeight: 800 }}>
+              Editar
+            </Button>
+            <Button fullWidth size="small" variant="outlined" color="error" onClick={onDownload} sx={{ fontWeight: 800 }}>
+              PDF
+            </Button>
+          </Stack>
+        </Stack>
+      </Paper>
+  )
+}
+
+function MobileInfo({ label, value }: { label: string; value: string }) {
+  return (
+      <Box sx={{ minWidth: 0 }}>
+        <Typography sx={{ fontSize: 11, fontWeight: 900, color: '#64748b', textTransform: 'uppercase' }}>
+          {label}
+        </Typography>
+        <Typography sx={{ fontSize: 12.5, fontWeight: 700, color: '#0f172a' }} noWrap>
+          {value}
+        </Typography>
+      </Box>
+  )
+}
+
+function getPatientName(row: Pick<AphResponse, 'primerNombre' | 'segundoNombre' | 'primerApellido' | 'segundoApellido'>) {
+  return [row.primerNombre, row.segundoNombre, row.primerApellido, row.segundoApellido].filter(Boolean).join(' ')
+}
+
+function getDocumentType(document?: string) {
+  if (!document) return ''
+  if (document.length === 10) return 'CC'
+  if (document.length === 11) return 'TI'
+  if (document.length >= 6) return 'CE'
+  return ''
 }
 
 function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean> }) {
@@ -1002,25 +1212,90 @@ function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateF
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Edad" value={form.edad} onChange={(value) => updateField('edad', value)} error={!!fieldErrors.edad} /></Grid>
         </Grid>
 
+        <SectionTitle compact>Datos de contacto</SectionTitle>
         <Grid container spacing={1}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <SectionTitle compact>Datos de contacto</SectionTitle>
-            <Grid container spacing={1}>
-              <Grid size={{ xs: 12, md: 6 }}><FormInput compact requiredHint label="Celular Paciente" value={form.celular} onChange={(value) => updateField('celular', value)} error={!!fieldErrors.celular} /></Grid>
-              <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Telefono Paciente" value={form.telefono} onChange={(value) => updateField('telefono', value)} error={!!fieldErrors.telefono} /></Grid>
-              <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Avisar a" value={form.avisarA} onChange={(value) => updateField('avisarA', value)} error={!!fieldErrors.avisarA} /></Grid>
-              <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Parentesco" value={form.parentesco} onChange={(value) => updateField('parentesco', value)} error={!!fieldErrors.parentesco} /></Grid>
-              <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Numero Para Avisar" value={form.numeroParaAvisar} onChange={(value) => updateField('numeroParaAvisar', value)} error={!!fieldErrors.numeroParaAvisar} /></Grid>
-              <Grid size={{ xs: 12, md: 6 }}><FormInput compact label="Numero Para Avisar 2" value={form.numeroParaAvisar2} onChange={(value) => updateField('numeroParaAvisar2', value)} error={!!fieldErrors.numeroParaAvisar2} /></Grid>
-            </Grid>
+          <Grid size={{ xs: 12, md: 3 }}>
+            <FormInput
+                compact
+                requiredHint
+                label="Celular Paciente"
+                value={form.celular}
+                onChange={(value) => updateField('celular', value)}
+                error={!!fieldErrors.celular}
+            />
           </Grid>
 
+          <Grid size={{ xs: 12, md: 3 }}>
+            <FormInput
+                compact
+                label="Telefono Paciente"
+                value={form.telefono}
+                onChange={(value) => updateField('telefono', value)}
+                error={!!fieldErrors.telefono}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 3 }}>
+            <FormInput
+                compact
+                label="Avisar a"
+                value={form.avisarA}
+                onChange={(value) => updateField('avisarA', value)}
+                error={!!fieldErrors.avisarA}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 3 }}>
+            <FormInput
+                compact
+                label="Parentesco"
+                value={form.parentesco}
+                onChange={(value) => updateField('parentesco', value)}
+                error={!!fieldErrors.parentesco}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 3 }}>
+            <FormInput
+                compact
+                label="Numero Para Avisar"
+                value={form.numeroParaAvisar}
+                onChange={(value) => updateField('numeroParaAvisar', value)}
+                error={!!fieldErrors.numeroParaAvisar}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 3 }}>
+            <FormInput
+                compact
+                label="Numero Para Avisar 2"
+                value={form.numeroParaAvisar2}
+                onChange={(value) => updateField('numeroParaAvisar2', value)}
+                error={!!fieldErrors.numeroParaAvisar2}
+            />
+          </Grid>
+        </Grid>
+
+        <SectionTitle compact>Datos acompanante</SectionTitle>
+        <Grid container spacing={1}>
           <Grid size={{ xs: 12, md: 6 }}>
-            <SectionTitle compact>Datos acompanante</SectionTitle>
-            <Grid container spacing={1}>
-              <Grid size={{ xs: 12, md: 8 }}><FormInput compact label="Nombre Acompanante" value={form.acompanante} onChange={(value) => updateField('acompanante', value)} error={!!fieldErrors.acompanante} /></Grid>
-              <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Celular Acompanante" value={form.celularAcompanante} onChange={(value) => updateField('celularAcompanante', value)} error={!!fieldErrors.celularAcompanante} /></Grid>
-            </Grid>
+            <FormInput
+                compact
+                label="Nombre Acompanante"
+                value={form.acompanante}
+                onChange={(value) => updateField('acompanante', value)}
+                error={!!fieldErrors.acompanante}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 3 }}>
+            <FormInput
+                compact
+                label="Celular Acompanante"
+                value={form.celularAcompanante}
+                onChange={(value) => updateField('celularAcompanante', value)}
+                error={!!fieldErrors.celularAcompanante}
+            />
           </Grid>
         </Grid>
 
@@ -1147,10 +1422,12 @@ function PhysicalExamTab({
                   id="aph-body-visible"
                   sx={{
                     bgcolor: 'white',
-                    width: 540,
+                    width: { xs: '100%', sm: 540 },
+                    maxWidth: '100%',
                     mx: 'auto',
                     p: 0,
-                    overflow: 'visible',
+                    overflowX: 'auto',
+                    overflowY: 'hidden',
                   }}
               >
                 <InjuryCaptureForPdf selected={selectedInjuries} interactive onToggle={onToggleInjury} />
@@ -1253,12 +1530,10 @@ function FormInput({
   compact?: boolean
   requiredHint?: boolean
 }) {
-  const showHint = requiredHint && value.trim() === ''
-
   return (
       <TextField
           fullWidth
-          label={label}
+          label={requiredHint ? `${label} *` : label}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           type={type}
@@ -1267,19 +1542,51 @@ function FormInput({
           rows={rows}
           error={error}
           size="small"
-          helperText={showHint ? 'Campo obligatorio' : undefined}
+          helperText={error ? 'Campo obligatorio' : undefined}
           slotProps={type === 'date' || type === 'time' ? { inputLabel: { shrink: true } } : undefined}
           sx={{
-            '& .MuiInputLabel-root': { fontWeight: 700, fontSize: 12, color: error ? '#d32f2f' : '#1f2937' },
-            '& .MuiOutlinedInput-root': { bgcolor: '#f8fafc', borderRadius: 1 },
-            '& .Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: error ? '#d32f2f' : '#075db8' },
-            '& .MuiInputBase-input': { py: compact ? 0.6 : 0.85, fontSize: 12.5 },
-            '& .MuiInputBase-root': { minHeight: compact ? 34 : 38 },
-            '& .MuiFormHelperText-root': { mt: 0.4, ml: 0.5, fontSize: 11, fontWeight: 700 },
+            '& .MuiInputLabel-root': {
+              fontWeight: 800,
+              fontSize: { xs: 12, md: 11.5 },
+              color: error ? '#d32f2f' : '#334155',
+            },
+            '& .MuiOutlinedInput-root': {
+              bgcolor: '#f8fafc',
+              borderRadius: 1.5,
+              minHeight: multiline ? undefined : compact ? { xs: 38, md: 34 } : { xs: 42, md: 38 },
+              '& fieldset': {
+                borderColor: '#cbd5e1',
+              },
+              '&:hover fieldset': {
+                borderColor: '#94a3b8',
+              },
+            },
+            '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderColor: error ? '#d32f2f' : '#075db8',
+              borderWidth: 1.5,
+            },
+            '& .MuiInputBase-input': {
+              py: multiline ? 1 : compact ? { xs: 0.75, md: 0.45 } : { xs: 0.9, md: 0.6 },
+              px: 1.25,
+              fontSize: { xs: 13, md: 12.5 },
+              lineHeight: 1.25,
+            },
+            '& .MuiSelect-select': {
+              display: 'flex',
+              alignItems: 'center',
+            },
+            '& .MuiFormHelperText-root': {
+              mt: 0.25,
+              ml: 0.5,
+              fontSize: 10.5,
+              fontWeight: 700,
+            },
           }}
       >
         {options.map((option) => (
-            <MenuItem key={option} value={option}>{option}</MenuItem>
+            <MenuItem key={option} value={option} sx={{ fontSize: 12.5 }}>
+              {option}
+            </MenuItem>
         ))}
       </TextField>
   )
@@ -1291,11 +1598,12 @@ function SectionTitle({ children, sx, compact = false }: { children: ReactNode; 
           variant="h6"
           sx={{
             color: '#0073f0',
-            fontWeight: 800,
+            fontWeight: 900,
             textTransform: 'uppercase',
-            fontSize: compact ? 12.5 : 14,
-            lineHeight: 1.1,
-            mb: compact ? 0.5 : 1,
+            fontSize: compact ? 11.5 : 13,
+            lineHeight: 1,
+            mb: compact ? 0.35 : 0.75,
+            letterSpacing: '-0.01em',
             ...sx,
           }}
       >

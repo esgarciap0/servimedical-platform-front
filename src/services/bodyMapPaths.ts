@@ -1,9 +1,9 @@
 /** SVG path data for male front body (viewBox: "0 0 724 1448") */
 export type BodySlug =
-  | 'head' | 'hair' | 'neck' | 'trapezius' | 'deltoids'
-  | 'chest' | 'biceps' | 'triceps' | 'obliques' | 'abs'
-  | 'forearm' | 'hands' | 'adductors' | 'quadriceps'
-  | 'knees' | 'tibialis' | 'calves' | 'ankles' | 'feet'
+    | 'head' | 'hair' | 'neck' | 'trapezius' | 'deltoids'
+    | 'chest' | 'biceps' | 'triceps' | 'obliques' | 'abs'
+    | 'forearm' | 'hands' | 'adductors' | 'quadriceps'
+    | 'knees' | 'tibialis' | 'calves' | 'ankles' | 'feet'
 
 interface PartData {
   common?: string[]
