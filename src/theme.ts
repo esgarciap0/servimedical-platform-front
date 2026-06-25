@@ -5,10 +5,11 @@ const theme = createTheme({
     mode: 'light',
     primary: {
       main: '#075db8',
-      dark: '#003f83',
+      dark: '#064a94',
     },
     secondary: {
-      main: '#f0142f',
+      main: '#0f766e',
+      dark: '#115e59',
     },
     background: {
       default: '#f3f6fa',
@@ -21,37 +22,120 @@ const theme = createTheme({
   },
   typography: {
     fontFamily: ['Inter', 'Roboto', 'Arial', 'sans-serif'].join(','),
+    fontSize: 12.5,
+    body1: {
+      fontSize: 13,
+      lineHeight: 1.35,
+    },
+    body2: {
+      fontSize: 12,
+      lineHeight: 1.35,
+    },
     h4: {
-      fontWeight: 800,
+      fontSize: 24,
+      fontWeight: 900,
       letterSpacing: '-0.03em',
     },
     h5: {
-      fontWeight: 800,
+      fontSize: 20,
+      fontWeight: 900,
       letterSpacing: '-0.02em',
     },
     h6: {
-      fontWeight: 700,
+      fontSize: 16,
+      fontWeight: 800,
     },
     button: {
-      fontWeight: 700,
+      fontSize: 12.5,
+      fontWeight: 800,
       textTransform: 'none',
     },
   },
   shape: {
-    borderRadius: 18,
+    borderRadius: 10,
   },
   components: {
     MuiCard: {
       styleOverrides: {
         root: {
           border: '1px solid rgba(7, 93, 184, 0.08)',
-          boxShadow: '0 14px 34px rgba(15, 36, 75, 0.07)',
+          boxShadow: '0 10px 24px rgba(15, 36, 75, 0.06)',
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          minHeight: 32,
+          borderRadius: 10,
+          padding: '4px 10px',
+          fontSize: 12.5,
         },
       },
     },
     MuiButtonBase: {
       defaultProps: {
         disableRipple: true,
+      },
+    },
+    MuiTextField: {
+      defaultProps: {
+        size: 'small',
+      },
+    },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          fontSize: 12,
+          fontWeight: 700,
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          minHeight: 34,
+          borderRadius: 10,
+          fontSize: 12.5,
+        },
+        input: {
+          padding: '6px 10px',
+        },
+      },
+    },
+    MuiSelect: {
+      styleOverrides: {
+        select: {
+          padding: '6px 10px',
+          minHeight: 'unset',
+        },
+      },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          minHeight: 32,
+          fontSize: 12.5,
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          fontSize: 12,
+          padding: '6px 10px',
+          lineHeight: 1.25,
+        },
+        head: {
+          fontWeight: 800,
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          minHeight: 38,
+        },
       },
     },
   },
