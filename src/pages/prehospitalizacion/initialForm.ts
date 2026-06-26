@@ -63,6 +63,7 @@ export const initialForm: AphForm = {
   fechaAceptacion: '',
   horaAceptacion: '',
   horaLlegada: '',
+  tipoServicioTransporte: '',
   transportadoA: '',
   codigoHabilitacion: '',
   codigoHabilitacionPrestadorRecibe: '',

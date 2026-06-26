@@ -72,6 +72,7 @@ export type AphForm = {
   fechaAceptacion: string
   horaAceptacion: string
   horaLlegada: string
+  tipoServicioTransporte: string
   transportadoA: string
   codigoHabilitacion: string
   codigoHabilitacionPrestadorRecibe: string

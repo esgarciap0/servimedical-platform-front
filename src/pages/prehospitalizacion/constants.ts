@@ -142,6 +142,10 @@ export const tipoDocumentoPropietarioOptions = [
   { value: 'PT', label: 'Permiso de Protección Temporal' },
   { value: 'NI', label: 'NIT' },
 ] as const
+export const tipoServicioTransporteOptions = [
+  { value: '1', label: '1 - Transporte básico' },
+  { value: '2', label: '2 - Transporte medicalizado' },
+] as const
 export const tipoDocumentoConductorOptions = [
   { value: 'TI', label: 'Tarjeta de identidad' },
   { value: 'CC', label: 'Cédula de ciudadanía' },
