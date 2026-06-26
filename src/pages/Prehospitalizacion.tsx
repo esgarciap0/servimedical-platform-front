@@ -217,6 +217,19 @@ export function Prehospitalizacion() {
       }
     }
 
+    if (tabIndex === 1) {
+      const requireCodigoHabilitacionPrestadorRecibe =
+        form.esAtencionInicialPacienteRemitidoOControl === '3' ||
+        form.esAtencionInicialPacienteRemitidoOControl === '7' ||
+        form.esAtencionInicialPacienteRemitidoOControl === '8'
+      if (
+        requireCodigoHabilitacionPrestadorRecibe &&
+        (!form.codigoHabilitacionPrestadorRecibe || form.codigoHabilitacionPrestadorRecibe.trim() === '')
+      ) {
+        errors.codigoHabilitacionPrestadorRecibe = true
+      }
+    }
+
     if (tabIndex === 8) {
       const showOwnerDocs =
         form.naturalezaEvento === '01' &&
@@ -1252,6 +1265,7 @@ function InsuranceTab({ form, updateField, fieldErrors, devMode }: { form: AphFo
           <Grid container spacing={0.75}>
             <Grid size={{ xs: 12, md: 8 }}><FormInput compact label="Aseguradora" value={form.aseguradora} onChange={(value) => updateField('aseguradora', value)} error={!!fieldErrors.aseguradora} /></Grid>
             <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Numero Poliza" value={form.poliza} onChange={(value) => updateField('poliza', value)} error={!!fieldErrors.poliza} /></Grid>
+            <Grid size={{ xs: 12, md: 6 }}><FormInput compact numeric maxLength={12} label="Código habilitación prestador recibe" value={form.codigoHabilitacionPrestadorRecibe} onChange={(value) => updateField('codigoHabilitacionPrestadorRecibe', value)} error={!!fieldErrors.codigoHabilitacionPrestadorRecibe} excelRef="BA: Codigo_de_habilitacion_del_prestador_que_recibe" devMode={devMode} requiredHint={form.esAtencionInicialPacienteRemitidoOControl === '3' || form.esAtencionInicialPacienteRemitidoOControl === '7' || form.esAtencionInicialPacienteRemitidoOControl === '8'} /></Grid>
             <Grid size={{ xs: 12 }}>
               <Typography sx={{ fontWeight: 800, mb: 0.5, fontSize: 12, color: fieldErrors.planBeneficios ? '#d32f2f' : '#1f2937' }}>Plan de Beneficios *</Typography>
               {planBeneficiosOptions.map((item) => (
