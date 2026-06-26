@@ -15,6 +15,9 @@ export type AphForm = {
   placa: string
   esAtencionInicialPacienteRemitidoOControl: string
   traslado: string
+  codigoHabilitacionRecibeTransportePrimario: string
+  direccionOrigenTransportePrimario: string
+  direccionDestinoTransportePrimario: string
   tipoTraslado: string
   prioridad: string
   fechaAccidente: string

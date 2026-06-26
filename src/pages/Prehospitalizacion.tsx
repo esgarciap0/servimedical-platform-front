@@ -68,7 +68,6 @@ import {
   tipoDocumentoConductorOptions,
   tipoDocumentoProfesionalRecibeOptions,
   tipoDocumentoPropietarioOptions,
-  tipoServicioTransporteOptions,
   tipoTrasladoOptions,
   tipoVehiculoOptions,
   trasladoOptions,
@@ -217,12 +216,21 @@ export function Prehospitalizacion() {
       if (requireCodigoHabilitacion && (!form.codigoHabilitacion || form.codigoHabilitacion.trim() === '')) {
         errors.codigoHabilitacion = true
       }
-      const requireTipoServicioTransporte =
+      const requireTransportePrimario =
         form.esAtencionInicialPacienteRemitidoOControl === '2' ||
         form.esAtencionInicialPacienteRemitidoOControl === '6' ||
         form.esAtencionInicialPacienteRemitidoOControl === '8'
-      if (requireTipoServicioTransporte && (!form.tipoServicioTransporte || form.tipoServicioTransporte.trim() === '')) {
-        errors.tipoServicioTransporte = true
+      if (requireTransportePrimario && (!form.placa || form.placa.trim() === '')) {
+        errors.placa = true
+      }
+      if (requireTransportePrimario && (!form.codigoHabilitacionRecibeTransportePrimario || form.codigoHabilitacionRecibeTransportePrimario.trim() === '')) {
+        errors.codigoHabilitacionRecibeTransportePrimario = true
+      }
+      if (requireTransportePrimario && (!form.direccionOrigenTransportePrimario || form.direccionOrigenTransportePrimario.trim() === '')) {
+        errors.direccionOrigenTransportePrimario = true
+      }
+      if (requireTransportePrimario && (!form.direccionDestinoTransportePrimario || form.direccionDestinoTransportePrimario.trim() === '')) {
+        errors.direccionDestinoTransportePrimario = true
       }
     }
 
@@ -1136,18 +1144,20 @@ function PatientTab({ form, updateField, fieldErrors, devMode }: { form: AphForm
         <Grid container spacing={0.75}>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Codigo APH" value={form.codigo} onChange={(value) => updateField('codigo', value)} error={!!fieldErrors.codigo} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Movil" select value={form.movil} onChange={(value) => updateField('movil', value)} options={ambulanceOptions} error={!!fieldErrors.movil} /></Grid>
-          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Placa" alphanumeric maxLength={10} value={form.placa} onChange={(value) => updateField('placa', value)} error={!!fieldErrors.placa} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Placa" alphanumeric maxLength={7} value={form.placa} onChange={(value) => updateField('placa', value)} error={!!fieldErrors.placa} excelRef="BG: Placa_ambulancia_que_realiza_el_traslado" devMode={devMode} requiredHint={form.esAtencionInicialPacienteRemitidoOControl === '2' || form.esAtencionInicialPacienteRemitidoOControl === '6' || form.esAtencionInicialPacienteRemitidoOControl === '8'} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact select label="Atención inicial / remitido / control" value={form.esAtencionInicialPacienteRemitidoOControl} onChange={(value) => updateField('esAtencionInicialPacienteRemitidoOControl', value)} options={atencionInicialOptions} excelRef="AW: Es_atencion_inicial_paciente_remitido_o_control" devMode={devMode} /></Grid>
-          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Traslado" select value={form.traslado} onChange={(value) => updateField('traslado', value)} options={trasladoOptions} error={!!fieldErrors.traslado} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Traslado" select value={form.traslado} onChange={(value) => updateField('traslado', value)} options={trasladoOptions} error={!!fieldErrors.traslado} excelRef="BF: Tipo_de_servicio_del_transporte" devMode={devMode} /></Grid>
+          <Grid size={{ xs: 12, md: 3 }}><FormInput compact numeric maxLength={12} label="Cód. habilitación recibe transp. primario" value={form.codigoHabilitacionRecibeTransportePrimario} onChange={(value) => updateField('codigoHabilitacionRecibeTransportePrimario', value)} error={!!fieldErrors.codigoHabilitacionRecibeTransportePrimario} excelRef="BH: Codigo_de_habilitacion_del_prestador_que_recibe_transporte_primario" devMode={devMode} requiredHint={form.esAtencionInicialPacienteRemitidoOControl === '2' || form.esAtencionInicialPacienteRemitidoOControl === '6' || form.esAtencionInicialPacienteRemitidoOControl === '8'} /></Grid>
+          <Grid size={{ xs: 12, md: 4 }}><FormInput compact address maxLength={100} label="Dirección origen transporte primario" value={form.direccionOrigenTransportePrimario} onChange={(value) => updateField('direccionOrigenTransportePrimario', value)} error={!!fieldErrors.direccionOrigenTransportePrimario} excelRef="BI: Transporte_de_la_victima_desde_el_sitio_del_evento_Direccion" devMode={devMode} requiredHint={form.esAtencionInicialPacienteRemitidoOControl === '2' || form.esAtencionInicialPacienteRemitidoOControl === '6' || form.esAtencionInicialPacienteRemitidoOControl === '8'} /></Grid>
+          <Grid size={{ xs: 12, md: 4 }}><FormInput compact address maxLength={100} label="Dirección destino transporte primario" value={form.direccionDestinoTransportePrimario} onChange={(value) => updateField('direccionDestinoTransportePrimario', value)} error={!!fieldErrors.direccionDestinoTransportePrimario} excelRef="BJ: Transporte_de_la_victima_hasta_el_fin_del_recorrido_direccion_IPS" devMode={devMode} requiredHint={form.esAtencionInicialPacienteRemitidoOControl === '2' || form.esAtencionInicialPacienteRemitidoOControl === '6' || form.esAtencionInicialPacienteRemitidoOControl === '8'} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact numeric maxLength={12} label="Código habilitación prestador remite" value={form.codigoHabilitacion} onChange={(value) => updateField('codigoHabilitacion', value)} error={!!fieldErrors.codigoHabilitacion} excelRef="AZ: Codigo_de_habilitacion_del_prestador_que_remite" devMode={devMode} requiredHint={form.esAtencionInicialPacienteRemitidoOControl === '3' || form.esAtencionInicialPacienteRemitidoOControl === '7' || form.esAtencionInicialPacienteRemitidoOControl === '8'} /></Grid>
-          <Grid size={{ xs: 12, md: 2 }}><FormInput compact select label="Tipo servicio transporte" value={form.tipoServicioTransporte} onChange={(value) => updateField('tipoServicioTransporte', value)} options={tipoServicioTransporteOptions} error={!!fieldErrors.tipoServicioTransporte} excelRef="BF: Tipo_de_servicio_del_transporte" devMode={devMode} requiredHint={form.esAtencionInicialPacienteRemitidoOControl === '2' || form.esAtencionInicialPacienteRemitidoOControl === '6' || form.esAtencionInicialPacienteRemitidoOControl === '8'} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Tipo traslado" select value={form.tipoTraslado} onChange={(value) => updateField('tipoTraslado', value)} options={tipoTrasladoOptions} error={!!fieldErrors.tipoTraslado} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Prioridad" select value={form.prioridad} onChange={(value) => updateField('prioridad', value)} options={prioridadOptions} error={!!fieldErrors.prioridad} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Fecha Accidente" type="date" value={form.fechaAccidente} onChange={(value) => updateField('fechaAccidente', value)} error={!!fieldErrors.fechaAccidente} excelRef="P: Fecha_de_ocurrencia_evento" devMode={devMode} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Hora Accidente" type="time" value={form.horaAccidente} onChange={(value) => updateField('horaAccidente', value)} error={!!fieldErrors.horaAccidente} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Naturaleza del Evento" select value={form.naturalezaEvento} onChange={(value) => updateField('naturalezaEvento', value)} options={naturalezaOptions} error={!!fieldErrors.naturalezaEvento} excelRef="M: Naturaleza_del_evento" devMode={devMode} /></Grid>
           {form.naturalezaEvento === '17' && (
-              <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Descripción del otro evento" value={form.descripcionOtroEvento} onChange={(value) => updateField('descripcionOtroEvento', value)} excelRef="N: Descripcion_del_otro_evento" devMode={devMode} /></Grid>
+              <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Descripción del otro evento" maxLength={40} value={form.descripcionOtroEvento} onChange={(value) => updateField('descripcionOtroEvento', value)} excelRef="N: Descripcion_del_otro_evento" devMode={devMode} /></Grid>
           )}
           {form.naturalezaEvento === '01' && (
               <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Condición Víctima" select value={form.condicionVictima} onChange={(value) => updateField('condicionVictima', value)} options={condicionOptions} excelRef="O: Condicion_victima" devMode={devMode} /></Grid>
@@ -1279,7 +1289,7 @@ function PatientTab({ form, updateField, fieldErrors, devMode }: { form: AphForm
 
         <SectionTitle compact>Ubicacion</SectionTitle>
         <Grid container spacing={0.75}>
-          <Grid size={{ xs: 12, md: 4 }}><FormInput compact requiredHint label="Direccion de Residencia" address maxLength={120} value={form.direccion} onChange={(value) => updateField('direccion', value)} error={!!fieldErrors.direccion} excelRef="J: Direccion_residencia_victima" devMode={devMode} /></Grid>
+          <Grid size={{ xs: 12, md: 4 }}><FormInput compact requiredHint label="Direccion de Residencia" address maxLength={100} value={form.direccion} onChange={(value) => updateField('direccion', value)} error={!!fieldErrors.direccion} excelRef="J: Direccion_residencia_victima" devMode={devMode} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Código municipio residencia" select value={form.codigoMunicipioResidencia} onChange={(value) => updateField('codigoMunicipioResidencia', value)} options={municipioOptions} excelRef="K: Codigo_municipio_residencia_victima" devMode={devMode} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Zona Paciente" select value={form.zonaPaciente} onChange={(value) => updateField('zonaPaciente', value)} options={zonaOptions} error={!!fieldErrors.zonaPaciente} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Departamento" value={form.departamento} onChange={(value) => updateField('departamento', value)} error={!!fieldErrors.departamento} /></Grid>
