@@ -155,6 +155,15 @@ export const tipoDocumentoConductorOptions = [
   { value: 'AS', label: 'Adulto sin identificación' },
   { value: 'MS', label: 'Menor sin identificación' },
 ] as const
+export const tipoDocumentoProfesionalRecibeOptions = [
+  { value: 'CC', label: 'Cédula de ciudadanía' },
+  { value: 'CE', label: 'Cédula de extranjería' },
+  { value: 'CD', label: 'Carné diplomático' },
+  { value: 'PA', label: 'Pasaporte' },
+  { value: 'PE', label: 'Permiso especial de permanencia' },
+  { value: 'DE', label: 'Documento extranjero' },
+  { value: 'PT', label: 'Permiso de Protección Temporal' },
+] as const
 export const municipioOptions = [
   { value: '23001', label: 'MONTERÍA' },
   { value: '23068', label: 'AYAPEL' },

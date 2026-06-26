@@ -66,6 +66,7 @@ import {
   tableColumns,
   tabs,
   tipoDocumentoConductorOptions,
+  tipoDocumentoProfesionalRecibeOptions,
   tipoDocumentoPropietarioOptions,
   tipoTrasladoOptions,
   tipoVehiculoOptions,
@@ -227,6 +228,19 @@ export function Prehospitalizacion() {
         (!form.codigoHabilitacionPrestadorRecibe || form.codigoHabilitacionPrestadorRecibe.trim() === '')
       ) {
         errors.codigoHabilitacionPrestadorRecibe = true
+      }
+    }
+
+    if (tabIndex === 6) {
+      const requireTipoDocumentoProfesionalRecibe =
+        form.esAtencionInicialPacienteRemitidoOControl === '3' ||
+        form.esAtencionInicialPacienteRemitidoOControl === '7' ||
+        form.esAtencionInicialPacienteRemitidoOControl === '8'
+      if (
+        requireTipoDocumentoProfesionalRecibe &&
+        (!form.tipoDocumentoProfesionalRecibe || form.tipoDocumentoProfesionalRecibe.trim() === '')
+      ) {
+        errors.tipoDocumentoProfesionalRecibe = true
       }
     }
 
@@ -1442,6 +1456,7 @@ function CrewTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; u
             <SectionTitle compact>Datos I.P.S. o prestador</SectionTitle>
             <Stack spacing={0.75}>
               <FormInput compact label="Medico y/o responsable I.P.S." value={form.medico} onChange={(value) => updateField('medico', value)} error={!!fieldErrors.medico} />
+              <FormInput compact select label="Tipo doc. profesional que recibe" value={form.tipoDocumentoProfesionalRecibe} onChange={(value) => updateField('tipoDocumentoProfesionalRecibe', value)} options={tipoDocumentoProfesionalRecibeOptions} error={!!fieldErrors.tipoDocumentoProfesionalRecibe} excelRef="BB: TIPO_de_documento_Profesional_que_recibe" devMode={devMode} requiredHint={form.esAtencionInicialPacienteRemitidoOControl === '3' || form.esAtencionInicialPacienteRemitidoOControl === '7' || form.esAtencionInicialPacienteRemitidoOControl === '8'} />
               <FormInput compact label="Doc. ID" value={form.documentoMedico} onChange={(value) => updateField('documentoMedico', value)} error={!!fieldErrors.documentoMedico} />
             </Stack>
           </Grid>

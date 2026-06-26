@@ -108,6 +108,7 @@ export type AphForm = {
   paramedico: string
   documentoParamedico: string
   medico: string
+  tipoDocumentoProfesionalRecibe: string
   documentoMedico: string
 }
 

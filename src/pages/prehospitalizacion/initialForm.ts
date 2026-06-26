@@ -99,5 +99,6 @@ export const initialForm: AphForm = {
   paramedico: '',
   documentoParamedico: '',
   medico: '',
+  tipoDocumentoProfesionalRecibe: '',
   documentoMedico: '',
 }
