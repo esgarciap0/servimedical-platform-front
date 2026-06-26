@@ -19,6 +19,8 @@ export type AphForm = {
   fechaAccidente: string
   horaAccidente: string
   lugarOcurrencia: string
+  naturalezaEvento: string
+  estadoAseguramiento: string
   zonaOrigen: string
   departamentoOrigen: string
   municipioOrigen: string
@@ -68,6 +70,7 @@ export type AphForm = {
   rm: string
   hallazgos: string
   diagnosticos: string
+  primerNombrePropietario: string
   materiales: string
   conductor: string
   documentoConductor: string

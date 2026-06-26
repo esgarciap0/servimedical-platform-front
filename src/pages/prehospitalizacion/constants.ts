@@ -2,6 +2,7 @@ import type { AphForm, AphSortKey } from '../../types/aph'
 
 export const tabs = [
   'Paciente',
+  'Datos del propietario',
   'Aseguradora',
   'Causa externa',
   'Examen fisico',
@@ -37,6 +38,25 @@ export const ambulanceOptions = ['001', '002', '003'] as const
  * AS: Adulto sin identificar, NU: NUIP.
  */
 export const tipoDocumentoOptions = ['CC', 'TI', 'CE', 'RC', 'PA', 'MS', 'AS', 'NU'] as const
+
+/**
+ * Naturaleza del evento según FUR.
+ * 01: Accidente de tránsito, 02: Evento catastrófico, 03: Evento terrorista.
+ */
+export const naturalezaEventoOptions = ['01', '02', '03'] as const
+
+/**
+ * Estado de aseguramiento SOAT según FUR.
+ * 1: Asegurado vigente, 2: No asegurado, 3: Asegurado periodo de carencia,
+ * 4: Póliza falsa, 5: Asegurado no vigente, 6: Cobertura tarifa diferencial Dto 2497/2022,
+ * 7: FONSAT decreto 2497 de 2022, 8: Vehículo sin placa.
+ */
+export const estadoAseguramientoOptions = ['1', '2', '3', '4', '5', '6', '7', '8'] as const
+
+/**
+ * Valores de estadoAseguramiento que obligan los campos del propietario.
+ */
+export const estadoAseguramientoObligaPropietario = ['2', '4', '6', '8'] as const
 
 export const procedures = [
   'Oxigenacion',
@@ -100,7 +120,8 @@ export const requiredFieldsByTab: Record<number, (keyof AphForm)[]> = {
     'medicacion',
     'liquidos',
   ],
-  1: [
+  1: [],
+  2: [
     'aseguradora',
     'poliza',
     'planBeneficios',
@@ -110,11 +131,11 @@ export const requiredFieldsByTab: Record<number, (keyof AphForm)[]> = {
     'ciudadTransporte',
     'estadoPaciente',
   ],
-  2: ['causaExterna'],
-  3: ['presion', 'frecuenciaCardiaca', 'frecuenciaRespiratoria', 'temperatura', 'ro', 'rv', 'rm', 'hallazgos', 'diagnosticos'],
-  4: [],
-  5: ['materiales'],
-  6: ['conductor', 'documentoConductor', 'paramedico', 'documentoParamedico', 'medico', 'documentoMedico'],
+  3: ['causaExterna'],
+  4: ['presion', 'frecuenciaCardiaca', 'frecuenciaRespiratoria', 'temperatura', 'ro', 'rv', 'rm', 'hallazgos', 'diagnosticos'],
+  5: [],
+  6: ['materiales'],
+  7: ['conductor', 'documentoConductor', 'paramedico', 'documentoParamedico', 'medico', 'documentoMedico'],
 }
 
 export type TableColumn = {

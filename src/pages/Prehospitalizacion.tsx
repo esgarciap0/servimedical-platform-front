@@ -48,6 +48,9 @@ import {
   actionButtonSx,
   ambulanceOptions,
   causes,
+  estadoAseguramientoObligaPropietario,
+  estadoAseguramientoOptions,
+  naturalezaEventoOptions,
   planBeneficiosOptions,
   prioridadOptions,
   procedures,
@@ -196,11 +199,21 @@ export function Prehospitalizacion() {
       }
     })
 
-    if (tabIndex === 3 && selectedInjuries.length === 0) {
+    // Conditional validation: Datos del propietario (tab 1)
+    if (tabIndex === 1) {
+      const isPropietarioRequired =
+        form.naturalezaEvento === '01' &&
+        estadoAseguramientoObligaPropietario.includes(form.estadoAseguramiento as typeof estadoAseguramientoObligaPropietario[number])
+      if (isPropietarioRequired && (!form.primerNombrePropietario || form.primerNombrePropietario.trim() === '')) {
+        errors.primerNombrePropietario = true
+      }
+    }
+
+    if (tabIndex === 4 && selectedInjuries.length === 0) {
       errors.lesiones = true
     }
 
-    if (tabIndex === 4 && selectedProcedures.length === 0) {
+    if (tabIndex === 5 && selectedProcedures.length === 0) {
       errors.procedimientos = true
     }
 
@@ -253,7 +266,7 @@ export function Prehospitalizacion() {
   const handleNext = async () => {
     if (!validateTab(tab)) return
 
-    if (tab === 3) {
+    if (tab === 4) {
       const image = await captureBodyMapImage()
 
       if (!image) {
@@ -291,12 +304,12 @@ export function Prehospitalizacion() {
   const handleSave = async () => {
     let finalLesionesImagen = lesionesImagen
 
-    if (!finalLesionesImagen && tab === 3) {
+    if (!finalLesionesImagen && tab === 4) {
       finalLesionesImagen = await captureBodyMapImage()
     }
 
     if (!finalLesionesImagen) {
-      setTab(3)
+      setTab(4)
       setSnackbar({
         message: 'No se encontro la imagen de ubicacion de lesiones. Revisa el paso Examen fisico y vuelve a guardar.',
         fields: [],
@@ -800,9 +813,10 @@ export function Prehospitalizacion() {
                     elevation={0}
                 >
                   {tab === 0 && <PatientTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
-                  {tab === 1 && <InsuranceTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
-                  {tab === 2 && <CauseTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
-                  {tab === 3 && (
+                  {tab === 1 && <OwnerTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
+                  {tab === 2 && <InsuranceTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
+                  {tab === 3 && <CauseTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
+                  {tab === 4 && (
                       <PhysicalExamTab
                           form={form}
                           updateField={updateField}
@@ -811,15 +825,15 @@ export function Prehospitalizacion() {
                           onToggleInjury={toggleInjury}
                       />
                   )}
-                  {tab === 4 && (
+                  {tab === 5 && (
                       <ProcedureTab
                           selectedProcedures={selectedProcedures}
                           onToggleProcedure={toggleProcedure}
                           fieldErrors={fieldErrors}
                       />
                   )}
-                  {tab === 5 && <MaterialsTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
-                  {tab === 6 && <CrewTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
+                  {tab === 6 && <MaterialsTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
+                  {tab === 7 && <CrewTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
                 </Paper>
 
                 <Box
@@ -992,6 +1006,8 @@ function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateF
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Fecha Accidente" type="date" value={form.fechaAccidente} onChange={(value) => updateField('fechaAccidente', value)} error={!!fieldErrors.fechaAccidente} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Hora Accidente" type="time" value={form.horaAccidente} onChange={(value) => updateField('horaAccidente', value)} error={!!fieldErrors.horaAccidente} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Lugar de Ocurrencia" value={form.lugarOcurrencia} onChange={(value) => updateField('lugarOcurrencia', value)} error={!!fieldErrors.lugarOcurrencia} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Naturaleza evento" select value={form.naturalezaEvento} onChange={(value) => updateField('naturalezaEvento', value)} options={naturalezaEventoOptions} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Estado aseguramiento" select value={form.estadoAseguramiento} onChange={(value) => updateField('estadoAseguramiento', value)} options={estadoAseguramientoOptions} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Zona Origen" select value={form.zonaOrigen} onChange={(value) => updateField('zonaOrigen', value)} options={zonaOptions} error={!!fieldErrors.zonaOrigen} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Dep.Origen" value={form.departamentoOrigen} onChange={(value) => updateField('departamentoOrigen', value)} error={!!fieldErrors.departamentoOrigen} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Municipio Origen" value={form.municipioOrigen} onChange={(value) => updateField('municipioOrigen', value)} error={!!fieldErrors.municipioOrigen} /></Grid>
@@ -1113,6 +1129,36 @@ function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateF
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Patologicos" value={form.patologicos} onChange={(value) => updateField('patologicos', value)} error={!!fieldErrors.patologicos} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Medicacion" value={form.medicacion} onChange={(value) => updateField('medicacion', value)} error={!!fieldErrors.medicacion} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Liquidos y alimentos" value={form.liquidos} onChange={(value) => updateField('liquidos', value)} error={!!fieldErrors.liquidos} /></Grid>
+        </Grid>
+      </Stack>
+  )
+}
+
+function OwnerTab({ form, updateField, fieldErrors }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean> }) {
+  const isPropietarioRequired =
+    form.naturalezaEvento === '01' &&
+    estadoAseguramientoObligaPropietario.includes(form.estadoAseguramiento as typeof estadoAseguramientoObligaPropietario[number])
+
+  return (
+      <Stack spacing={0.75}>
+        <SectionTitle compact>Datos del propietario del vehículo</SectionTitle>
+        {isPropietarioRequired && (
+            <Alert severity="info" sx={{ py: 0, fontSize: 11.5 }}>
+              Los campos marcados con * son obligatorios porque la naturaleza del evento es "Accidente de tránsito" y el estado de aseguramiento lo requiere.
+            </Alert>
+        )}
+        <Grid container spacing={0.75}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <FormInput
+                compact
+                requiredHint={isPropietarioRequired}
+                label="Primer nombre / Razón social"
+                value={form.primerNombrePropietario}
+                onChange={(value) => updateField('primerNombrePropietario', value)}
+                error={!!fieldErrors.primerNombrePropietario}
+                maxLength={30}
+            />
+          </Grid>
         </Grid>
       </Stack>
   )
@@ -1317,6 +1363,7 @@ function FormInput({
                      error,
                      compact = false,
                      requiredHint = false,
+                     maxLength,
                    }: {
   label: string
   value: string
@@ -1329,7 +1376,19 @@ function FormInput({
   error?: boolean
   compact?: boolean
   requiredHint?: boolean
+  maxLength?: number
 }) {
+  const slotProps = (() => {
+    const props: Record<string, unknown> = {}
+    if (type === 'date' || type === 'time') {
+      props.inputLabel = { shrink: true }
+    }
+    if (maxLength) {
+      props.htmlInput = { maxLength }
+    }
+    return Object.keys(props).length > 0 ? props : undefined
+  })()
+
   return (
       <TextField
           fullWidth
@@ -1342,8 +1401,8 @@ function FormInput({
           rows={rows}
           error={error}
           size="small"
-          helperText={error ? 'Campo obligatorio' : undefined}
-          slotProps={type === 'date' || type === 'time' ? { inputLabel: { shrink: true } } : undefined}
+          helperText={error ? 'Campo obligatorio' : maxLength ? `${value.length}/${maxLength}` : undefined}
+          slotProps={slotProps}
           sx={{
             '& .MuiInputLabel-root': {
               fontWeight: 800,
