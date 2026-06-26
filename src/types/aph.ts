@@ -70,6 +70,7 @@ export type AphForm = {
   poliza: string
   planBeneficios: string
   fechaAceptacion: string
+  horaAceptacion: string
   horaLlegada: string
   transportadoA: string
   codigoHabilitacion: string

@@ -61,6 +61,7 @@ export const initialForm: AphForm = {
   poliza: '',
   planBeneficios: 'SOAT',
   fechaAceptacion: '',
+  horaAceptacion: '',
   horaLlegada: '',
   transportadoA: '',
   codigoHabilitacion: '',
