@@ -69,6 +69,7 @@ export type AphForm = {
   aseguradora: string
   poliza: string
   planBeneficios: string
+  fechaAceptacion: string
   horaLlegada: string
   transportadoA: string
   codigoHabilitacion: string

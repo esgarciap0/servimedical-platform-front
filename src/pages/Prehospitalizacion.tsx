@@ -229,6 +229,12 @@ export function Prehospitalizacion() {
       ) {
         errors.codigoHabilitacionPrestadorRecibe = true
       }
+      if (
+        requireCodigoHabilitacionPrestadorRecibe &&
+        (!form.fechaAceptacion || form.fechaAceptacion.trim() === '')
+      ) {
+        errors.fechaAceptacion = true
+      }
     }
 
     if (tabIndex === 6) {
@@ -1302,6 +1308,7 @@ function InsuranceTab({ form, updateField, fieldErrors, devMode }: { form: AphFo
         <Grid size={{ xs: 12, md: 6 }}>
           <SectionTitle compact>Datos de traslado</SectionTitle>
           <Grid container spacing={0.75}>
+            <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Fecha de aceptación" type="date" value={form.fechaAceptacion} onChange={(value) => updateField('fechaAceptacion', value)} error={!!fieldErrors.fechaAceptacion} excelRef="BD: Fecha_de_aceptacion" devMode={devMode} requiredHint={form.esAtencionInicialPacienteRemitidoOControl === '3' || form.esAtencionInicialPacienteRemitidoOControl === '7' || form.esAtencionInicialPacienteRemitidoOControl === '8'} /></Grid>
             <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Hora de llegada" type="time" value={form.horaLlegada} onChange={(value) => updateField('horaLlegada', value)} error={!!fieldErrors.horaLlegada} /></Grid>
             <Grid size={{ xs: 12, md: 8 }}><FormInput compact label="Transportado a" value={form.transportadoA} onChange={(value) => updateField('transportadoA', value)} error={!!fieldErrors.transportadoA} /></Grid>
             <Grid size={{ xs: 12, md: 4 }}><FormInput compact label="Departamento traslado" value={form.departamentoTraslado} onChange={(value) => updateField('departamentoTraslado', value)} error={!!fieldErrors.departamentoTraslado} /></Grid>

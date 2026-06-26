@@ -60,6 +60,7 @@ export const initialForm: AphForm = {
   aseguradora: '',
   poliza: '',
   planBeneficios: 'SOAT',
+  fechaAceptacion: '',
   horaLlegada: '',
   transportadoA: '',
   codigoHabilitacion: '',
