@@ -242,6 +242,12 @@ export function Prehospitalizacion() {
       ) {
         errors.tipoDocumentoProfesionalRecibe = true
       }
+      if (
+        requireTipoDocumentoProfesionalRecibe &&
+        (!form.documentoMedico || form.documentoMedico.trim() === '')
+      ) {
+        errors.documentoMedico = true
+      }
     }
 
     if (tabIndex === 8) {
@@ -1457,7 +1463,7 @@ function CrewTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; u
             <Stack spacing={0.75}>
               <FormInput compact label="Medico y/o responsable I.P.S." value={form.medico} onChange={(value) => updateField('medico', value)} error={!!fieldErrors.medico} />
               <FormInput compact select label="Tipo doc. profesional que recibe" value={form.tipoDocumentoProfesionalRecibe} onChange={(value) => updateField('tipoDocumentoProfesionalRecibe', value)} options={tipoDocumentoProfesionalRecibeOptions} error={!!fieldErrors.tipoDocumentoProfesionalRecibe} excelRef="BB: TIPO_de_documento_Profesional_que_recibe" devMode={devMode} requiredHint={form.esAtencionInicialPacienteRemitidoOControl === '3' || form.esAtencionInicialPacienteRemitidoOControl === '7' || form.esAtencionInicialPacienteRemitidoOControl === '8'} />
-              <FormInput compact label="Doc. ID" value={form.documentoMedico} onChange={(value) => updateField('documentoMedico', value)} error={!!fieldErrors.documentoMedico} />
+              <FormInput compact alphanumeric maxLength={20} label="Doc. ID" value={form.documentoMedico} onChange={(value) => updateField('documentoMedico', value)} error={!!fieldErrors.documentoMedico} excelRef="BC: Numero_de_documento_Profesional_que_recibe" devMode={devMode} requiredHint={form.esAtencionInicialPacienteRemitidoOControl === '3' || form.esAtencionInicialPacienteRemitidoOControl === '7' || form.esAtencionInicialPacienteRemitidoOControl === '8'} />
             </Stack>
           </Grid>
         </Grid>

@@ -274,7 +274,7 @@ export const requiredFieldsByTab: Record<number, (keyof AphForm)[]> = {
   3: ['presion', 'frecuenciaCardiaca', 'frecuenciaRespiratoria', 'temperatura', 'ro', 'rv', 'rm', 'hallazgos', 'diagnosticos'],
   4: [],
   5: ['materiales'],
-  6: ['conductor', 'documentoConductor', 'paramedico', 'documentoParamedico', 'medico', 'documentoMedico'],
+  6: ['conductor', 'documentoConductor', 'paramedico', 'documentoParamedico', 'medico'],
   7: [],
   8: [],
   9: [],
