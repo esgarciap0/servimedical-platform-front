@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+﻿import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Link as RouterLink } from 'react-router-dom'
 import { toPng } from 'html-to-image'
 import { AddBoxIcon, CloseIcon, EditIcon, PageviewIcon, PictureAsPdfIcon } from '../icons/AppIcons'
 import {
@@ -38,411 +39,39 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
-import Body, { type ExtendedBodyPart, type Slug } from 'react-muscle-highlighter'
+import Body, { type ExtendedBodyPart } from 'react-muscle-highlighter'
 import logo from '../assets/app-256.png'
-
-type AphResponse = {
-  id: number
-  codigo: string
-  movil: string
-  placa: string
-  traslado: string
-  tipoTraslado: string
-  prioridad: string
-  fechaAccidente: string
-  horaAccidente: string
-  lugarOcurrencia: string
-  zonaOrigen: string
-  departamentoOrigen: string
-  municipioOrigen: string
-  documento: string
-  primerApellido: string
-  segundoApellido: string
-  primerNombre: string
-  segundoNombre: string
-  estadoCivil: string
-  ocupacion: string
-  sexo: string
-  fechaNacimiento: string
-  edad: string
-  celular: string
-  telefono: string
-  acompanante: string
-  celularAcompanante: string
-  avisarA: string
-  parentesco: string
-  numeroParaAvisar: string
-  numeroParaAvisar2: string
-  direccion: string
-  zonaPaciente: string
-  departamento: string
-  ciudad: string
-  alergia: string
-  patologicos: string
-  medicacion: string
-  liquidos: string
-  aseguradora: string
-  poliza: string
-  planBeneficios: string
-  horaLlegada: string
-  transportadoA: string
-  codigoHabilitacion: string
-  departamentoTraslado: string
-  ciudadTransporte: string
-  estadoPaciente: string
-  causaExterna: string
-  presion: string
-  frecuenciaCardiaca: string
-  frecuenciaRespiratoria: string
-  temperatura: string
-  ro: string
-  rv: string
-  rm: string
-  hallazgos: string
-  diagnosticos: string
-  lesiones: string[]
-  lesionesImagen?: string | null
-  procedimientos: string[]
-  materiales: string
-  conductor: string
-  documentoConductor: string
-  paramedico: string
-  documentoParamedico: string
-  medico: string
-  documentoMedico: string
-  createdAt: string
-  updatedAt: string
-}
-
-type AphForm = {
-  codigo: string
-  movil: string
-  placa: string
-  traslado: string
-  tipoTraslado: string
-  prioridad: string
-  fechaAccidente: string
-  horaAccidente: string
-  lugarOcurrencia: string
-  zonaOrigen: string
-  departamentoOrigen: string
-  municipioOrigen: string
-  documento: string
-  primerApellido: string
-  segundoApellido: string
-  primerNombre: string
-  segundoNombre: string
-  estadoCivil: string
-  ocupacion: string
-  sexo: string
-  fechaNacimiento: string
-  edad: string
-  celular: string
-  telefono: string
-  acompanante: string
-  celularAcompanante: string
-  avisarA: string
-  parentesco: string
-  numeroParaAvisar: string
-  numeroParaAvisar2: string
-  direccion: string
-  zonaPaciente: string
-  departamento: string
-  ciudad: string
-  alergia: string
-  patologicos: string
-  medicacion: string
-  liquidos: string
-  aseguradora: string
-  poliza: string
-  planBeneficios: string
-  horaLlegada: string
-  transportadoA: string
-  codigoHabilitacion: string
-  departamentoTraslado: string
-  ciudadTransporte: string
-  estadoPaciente: string
-  causaExterna: string
-  presion: string
-  frecuenciaCardiaca: string
-  frecuenciaRespiratoria: string
-  temperatura: string
-  ro: string
-  rv: string
-  rm: string
-  hallazgos: string
-  diagnosticos: string
-  materiales: string
-  conductor: string
-  documentoConductor: string
-  paramedico: string
-  documentoParamedico: string
-  medico: string
-  documentoMedico: string
-}
-
-const API_BASE = 'http://localhost:8080/api/aph'
-
-type SortOrder = 'asc' | 'desc'
-
-type SortKey =
-    | 'codigo'
-    | 'createdAt'
-    | 'movil'
-    | 'aseguradora'
-    | 'documento'
-    | 'paciente'
-    | 'origen'
-    | 'destino'
-    | 'paramedico'
-    | 'conductor'
-
-type TableColumn = {
-  label: string
-  sortKey?: SortKey
-  width?: number
-  minWidth?: number
-  maxWidth?: number
-  sticky?: boolean
-}
-
-const tableColumns: TableColumn[] = [
-  { label: 'APH', sortKey: 'codigo', width: 72 },
-  { label: 'Fecha', sortKey: 'createdAt', width: 112 },
-  { label: 'Ambulancia', sortKey: 'movil', width: 118 },
-  { label: 'Aseguradora', sortKey: 'aseguradora', width: 140 },
-  { label: 'T.D.', width: 64 },
-  { label: 'N° ID', sortKey: 'documento', width: 130 },
-  { label: 'Paciente', sortKey: 'paciente', width: 230 },
-  { label: 'Origen', sortKey: 'origen', width: 150 },
-  { label: 'Destino', sortKey: 'destino', width: 190 },
-  { label: 'Paramedico', sortKey: 'paramedico', width: 160 },
-  { label: 'Conductor', sortKey: 'conductor', width: 160 },
-  { label: 'Acciones', width: 124, sticky: true },
-]
-
-const stickyActionHeaderSx = {
-  position: 'sticky',
-  right: 0,
-  zIndex: 5,
-  bgcolor: '#f8fafc',
-  boxShadow: '-10px 0 16px -14px rgba(15, 23, 42, 0.55)',
-  minWidth: 124,
-  width: 124,
-} as const
-
-const stickyActionBodySx = {
-  position: 'sticky',
-  right: 0,
-  zIndex: 4,
-  bgcolor: '#ffffff',
-  boxShadow: '-10px 0 16px -14px rgba(15, 23, 42, 0.45)',
-  minWidth: 124,
-  width: 124,
-} as const
-
-const actionButtonSx = {
-  width: 30,
-  height: 30,
-  minWidth: 30,
-  borderRadius: 1.2,
-  p: 0,
-  '& svg': {
-    fontSize: 18,
-  },
-} as const
-
-const tabs = [
-  'Paciente',
-  'Aseguradora',
-  'Causa externa',
-  'Examen fisico',
-  'Procedimiento',
-  'Materiales y drogas',
-  'Tripulacion',
-]
-
-const initialForm: AphForm = {
-  codigo: '',
-  movil: '',
-  placa: '',
-  traslado: 'PRIMARIO',
-  tipoTraslado: 'BASICO',
-  prioridad: '1',
-  fechaAccidente: '',
-  horaAccidente: '',
-  lugarOcurrencia: '',
-  zonaOrigen: '',
-  departamentoOrigen: '',
-  municipioOrigen: '',
-  documento: '',
-  primerApellido: '',
-  segundoApellido: '',
-  primerNombre: '',
-  segundoNombre: '',
-  estadoCivil: '',
-  ocupacion: '',
-  sexo: '',
-  fechaNacimiento: '',
-  edad: '',
-  celular: '',
-  telefono: '',
-  acompanante: '',
-  celularAcompanante: '',
-  avisarA: '',
-  parentesco: '',
-  numeroParaAvisar: '',
-  numeroParaAvisar2: '',
-  direccion: '',
-  zonaPaciente: '',
-  departamento: '',
-  ciudad: '',
-  alergia: '',
-  patologicos: '',
-  medicacion: '',
-  liquidos: '',
-  aseguradora: '',
-  poliza: '',
-  planBeneficios: 'SOAT',
-  horaLlegada: '',
-  transportadoA: '',
-  codigoHabilitacion: '',
-  departamentoTraslado: '',
-  ciudadTransporte: '',
-  estadoPaciente: 'VIVO',
-  causaExterna: '',
-  presion: '',
-  frecuenciaCardiaca: '',
-  frecuenciaRespiratoria: '',
-  temperatura: '',
-  ro: '1',
-  rv: '1',
-  rm: '1',
-  hallazgos: '',
-  diagnosticos: '',
-  materiales: '',
-  conductor: '',
-  documentoConductor: '',
-  paramedico: '',
-  documentoParamedico: '',
-  medico: '',
-  documentoMedico: '',
-}
-
-const causes = [
-  'Enfermedad General',
-  'Accidente comun',
-  'Lesion por agresion',
-  'Accidente de transito',
-  'Lesion autoinfringida',
-  'Accidente de trabajo',
-  'Catastrofe',
-  'Accidente rabico o fatidico',
-  'Otro',
-]
-
-const trasladoOptions = ['PRIMARIO', 'SECUNDARIO']
-const tipoTrasladoOptions = ['BASICO', 'MEDICALIZADO']
-const prioridadOptions = ['1', '2', '3', '4']
-const zonaOptions = ['U', 'R']
-const sexoOptions = ['M', 'F']
-const planBeneficiosOptions = ['SOAT', 'ARL', 'EPS', 'PARTICULAR']
-const ambulanceOptions = ['001', '002', '003']
-
-const bodyPartLabels: Record<Slug, string> = {
-  abs: 'Abdomen',
-  adductors: 'Aductores',
-  ankles: 'Tobillos',
-  biceps: 'Biceps',
-  calves: 'Pantorrillas',
-  chest: 'Torax',
-  deltoids: 'Hombros',
-  feet: 'Pies',
-  forearm: 'Antebrazos',
-  gluteal: 'Cadera / gluteos',
-  hamstring: 'Muslos posteriores',
-  hands: 'Manos',
-  hair: 'Cabello',
-  head: 'Cabeza',
-  knees: 'Rodillas',
-  'lower-back': 'Zona lumbar',
-  neck: 'Cuello',
-  obliques: 'Flancos',
-  quadriceps: 'Muslos anteriores',
-  tibialis: 'Piernas anteriores',
-  trapezius: 'Trapecio',
-  triceps: 'Brazos posteriores',
-  'upper-back': 'Espalda superior',
-}
-
-const procedures = [
-  'Oxigenacion',
-  'Hemoplastia',
-  'Medicacion',
-  'Aspiracion',
-  'Desfibrilacion',
-  'Parto',
-  'Ventilacion',
-  'Inmovilizacion',
-  'Canalizacion',
-  'Entubacion',
-  'Vendaje',
-  'Curacion',
-  'RCP',
-  'Asepsia',
-  'Apoyo Psicologico',
-  'Sutura',
-  'Liquidos',
-  'Collar cervical',
-  'Otro',
-]
-
-const requiredFieldsByTab: Record<number, (keyof AphForm)[]> = {
-  0: [
-    'codigo',
-    'movil',
-    'placa',
-    'traslado',
-    'tipoTraslado',
-    'prioridad',
-    'fechaAccidente',
-    'horaAccidente',
-    'lugarOcurrencia',
-    'zonaOrigen',
-    'departamentoOrigen',
-    'municipioOrigen',
-    'documento',
-    'primerApellido',
-    'segundoApellido',
-    'primerNombre',
-    'segundoNombre',
-    'estadoCivil',
-    'ocupacion',
-    'sexo',
-    'fechaNacimiento',
-    'edad',
-    'celular',
-    'telefono',
-    'acompanante',
-    'celularAcompanante',
-    'avisarA',
-    'parentesco',
-    'direccion',
-    'zonaPaciente',
-    'departamento',
-    'ciudad',
-    'alergia',
-    'patologicos',
-    'medicacion',
-    'liquidos',
-  ],
-  1: ['aseguradora', 'poliza', 'planBeneficios', 'horaLlegada', 'transportadoA', 'departamentoTraslado', 'ciudadTransporte', 'estadoPaciente'],
-  2: ['causaExterna'],
-  3: ['presion', 'frecuenciaCardiaca', 'frecuenciaRespiratoria', 'temperatura', 'ro', 'rv', 'rm', 'hallazgos', 'diagnosticos'],
-  4: [],
-  5: ['materiales'],
-  6: ['conductor', 'documentoConductor', 'paramedico', 'documentoParamedico', 'medico', 'documentoMedico'],
-}
+import { aphService } from '../services/aphService'
+import { ApiError } from '../services/api'
+import type { AphForm, AphResponse, AphSortKey, SortOrder } from '../types/aph'
+import {
+  actionButtonSx,
+  ambulanceOptions,
+  causes,
+  planBeneficiosOptions,
+  prioridadOptions,
+  procedures,
+  requiredFieldsByTab,
+  sexoOptions,
+  stickyActionBodySx,
+  stickyActionHeaderSx,
+  tableColumns,
+  tabs,
+  tipoTrasladoOptions,
+  trasladoOptions,
+  zonaOptions,
+} from './prehospitalizacion/constants'
+import { initialForm } from './prehospitalizacion/initialForm'
+import {
+  compareSortValues,
+  formatInjuryLabel,
+  getDocumentType,
+  getPatientName,
+  getSortValue,
+  makeInjuryKey,
+  parseInjuryKey,
+  pickFormFields,
+} from './prehospitalizacion/helpers'
 
 export function Prehospitalizacion() {
   const theme = useTheme()
@@ -456,7 +85,7 @@ export function Prehospitalizacion() {
   const [lesionesImagen, setLesionesImagen] = useState<string | null>(null)
   const [rows, setRows] = useState<AphResponse[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState<SortKey>('createdAt')
+  const [sortBy, setSortBy] = useState<AphSortKey>('createdAt')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({})
   const [snackbar, setSnackbar] = useState<{ message: string; fields: string[]; severity: 'error' | 'success' } | null>(null)
@@ -498,10 +127,17 @@ export function Prehospitalizacion() {
   const progress = Math.round(((tab + 1) / tabs.length) * 100)
 
   useEffect(() => {
-    fetch(API_BASE)
-        .then((res) => res.json())
-        .then(setRows)
-        .catch(() => setRows([]))
+    const controller = new AbortController()
+
+    aphService
+      .list(controller.signal)
+      .then(setRows)
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        setRows([])
+      })
+
+    return () => controller.abort()
   }, [])
 
   const updateField = (field: keyof AphForm, value: string) => {
@@ -636,19 +272,12 @@ export function Prehospitalizacion() {
 
   const handleEdit = async (id: number) => {
     try {
-      const res = await fetch(`${API_BASE}/${id}`)
+      const data = await aphService.getById(id)
 
-      if (!res.ok) {
-        throw new Error('Error al obtener registro')
-      }
-
-      const data: AphResponse = await res.json()
-      const { lesiones, procedimientos, lesionesImagen: storedLesionesImagen, createdAt, updatedAt, ...formData } = data
-
-      setForm({ ...initialForm, ...(formData as AphForm) })
-      setSelectedInjuries(lesiones || [])
-      setSelectedProcedures(procedimientos || [])
-      setLesionesImagen(storedLesionesImagen || null)
+      setForm(pickFormFields(data, initialForm))
+      setSelectedInjuries(data.lesiones || [])
+      setSelectedProcedures(data.procedimientos || [])
+      setLesionesImagen(data.lesionesImagen || null)
       setFieldErrors({})
       setEditId(id)
       setTab(0)
@@ -659,7 +288,6 @@ export function Prehospitalizacion() {
   }
 
   const handleSave = async () => {
-
     let finalLesionesImagen = lesionesImagen
 
     if (!finalLesionesImagen && tab === 3) {
@@ -675,38 +303,19 @@ export function Prehospitalizacion() {
       })
       return
     }
-    const body = {
+
+    const payload = {
       ...form,
       lesiones: selectedInjuries,
       lesionesImagen: finalLesionesImagen,
       procedimientos: selectedProcedures,
     }
 
-    const url = editId ? `${API_BASE}/${editId}` : API_BASE
-    const method = editId ? 'PUT' : 'POST'
-
     try {
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-
-      if (!response.ok) {
-        const text = await response.text()
-        let errorMessage = 'Error al guardar'
-        let errorFields: string[] = []
-
-        try {
-          const parsed = JSON.parse(text)
-          if (parsed.message) errorMessage = parsed.message
-          if (parsed.fields) errorFields = parsed.fields
-        } catch {
-          errorMessage = text.slice(0, 200)
-        }
-
-        setSnackbar({ message: errorMessage, fields: errorFields, severity: 'error' })
-        return
+      if (editId) {
+        await aphService.update(editId, payload)
+      } else {
+        await aphService.create(payload)
       }
 
       setOpen(false)
@@ -719,9 +328,14 @@ export function Prehospitalizacion() {
       setTab(0)
       setSnackbar({ message: 'Registro guardado exitosamente', fields: [], severity: 'success' })
 
-      const res = await fetch(API_BASE)
-      setRows(await res.json())
+      const list = await aphService.list()
+      setRows(list)
     } catch (error) {
+      if (error instanceof ApiError) {
+        setSnackbar({ message: error.message, fields: error.fields, severity: 'error' })
+        return
+      }
+
       setSnackbar({
         message: `Error de red: ${error instanceof Error ? error.message : 'desconocido'}`,
         fields: [],
@@ -730,15 +344,7 @@ export function Prehospitalizacion() {
     }
   }
 
-  const fetchPdfBlob = async (id: number): Promise<Blob> => {
-    const response = await fetch(`${API_BASE}/${id}/pdf`)
-
-    if (!response.ok) {
-      throw new Error('No se pudo generar el PDF')
-    }
-
-    return response.blob()
-  }
+  const fetchPdfBlob = (id: number): Promise<Blob> => aphService.getPdfBlob(id)
 
   const downloadBlob = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob)
@@ -789,7 +395,7 @@ export function Prehospitalizacion() {
     setOpen(true)
   }
 
-  const handleSort = (key: SortKey) => {
+  const handleSort = (key: AphSortKey) => {
     if (sortBy === key) {
       setSortOrder((current) => (current === 'asc' ? 'desc' : 'asc'))
       return
@@ -802,7 +408,7 @@ export function Prehospitalizacion() {
   return (
       <Stack spacing={{ xs: 1.25, md: 1.5 }}>
         <Breadcrumbs aria-label="breadcrumb">
-          <Link underline="hover" color="primary" href="/">
+          <Link component={RouterLink} underline="hover" color="primary" to="/">
             Inicio
           </Link>
           <Typography color="text.secondary">APH</Typography>
@@ -976,7 +582,7 @@ export function Prehospitalizacion() {
                                 <TableSortLabel
                                     active={sortBy === column.sortKey}
                                     direction={sortBy === column.sortKey ? sortOrder : 'asc'}
-                                    onClick={() => handleSort(column.sortKey as SortKey)}
+                                    onClick={() => handleSort(column.sortKey as AphSortKey)}
                                     sx={{
                                       fontWeight: 900,
                                       color: '#334155',
@@ -1240,7 +846,7 @@ export function Prehospitalizacion() {
                             onClick={() => setTab(tab - 1)}
                             sx={{ minHeight: 32, px: 1.5, fontSize: 12.5, fontWeight: 800, width: { xs: '100%', sm: 'auto' } }}
                         >
-                          ← Anterior
+                          â† Anterior
                         </Button>
                     )}
                   </Box>
@@ -1265,7 +871,7 @@ export function Prehospitalizacion() {
                             }}
                             sx={{ minHeight: 32, px: 1.5, fontSize: 12.5, fontWeight: 800, bgcolor: '#075db8', '&:hover': { bgcolor: '#064a94' }, width: { xs: '100%', sm: 'auto' } }}
                         >
-                          Siguiente →
+                          Siguiente â†’
                         </Button>
                     ) : (
                         <Button
@@ -1371,69 +977,6 @@ function MobileInfo({ label, value }: { label: string; value: string }) {
   )
 }
 
-function getSortValue(row: AphResponse, key: SortKey): string | number {
-  switch (key) {
-    case 'codigo': {
-      const value = Number(row.codigo || row.id)
-      return Number.isNaN(value) ? row.codigo || String(row.id) : value
-    }
-
-    case 'createdAt': {
-      const value = new Date(row.createdAt || '').getTime()
-      return Number.isNaN(value) ? 0 : value
-    }
-
-    case 'movil':
-      return row.movil || ''
-
-    case 'aseguradora':
-      return row.aseguradora || ''
-
-    case 'documento':
-      return row.documento || ''
-
-    case 'paciente':
-      return getPatientName(row)
-
-    case 'origen':
-      return row.lugarOcurrencia || ''
-
-    case 'destino':
-      return row.transportadoA || ''
-
-    case 'paramedico':
-      return row.paramedico || ''
-
-    case 'conductor':
-      return row.conductor || ''
-
-    default:
-      return ''
-  }
-}
-
-function compareSortValues(first: string | number, second: string | number) {
-  if (typeof first === 'number' && typeof second === 'number') {
-    return first - second
-  }
-
-  return String(first).localeCompare(String(second), 'es', {
-    numeric: true,
-    sensitivity: 'base',
-  })
-}
-
-function getPatientName(row: Pick<AphResponse, 'primerNombre' | 'segundoNombre' | 'primerApellido' | 'segundoApellido'>) {
-  return [row.primerNombre, row.segundoNombre, row.primerApellido, row.segundoApellido].filter(Boolean).join(' ')
-}
-
-function getDocumentType(document?: string) {
-  if (!document) return ''
-  if (document.length === 10) return 'CC'
-  if (document.length === 11) return 'TI'
-  if (document.length >= 6) return 'CE'
-  return ''
-}
 
 function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean> }) {
   return (
@@ -1778,7 +1321,7 @@ function FormInput({
   onChange: (value: string) => void
   type?: string
   select?: boolean
-  options?: string[]
+  options?: readonly string[]
   multiline?: boolean
   rows?: number
   error?: boolean
@@ -1864,36 +1407,6 @@ function SectionTitle({ children, sx, compact = false }: { children: ReactNode; 
         {children}
       </Typography>
   )
-}
-function makeInjuryKey(view: 'front' | 'back', slug: Slug, side?: 'left' | 'right') {
-  return `${view}:${slug}:${side || 'both'}`
-}
-
-function parseInjuryKey(value: string): { view: 'front' | 'back'; slug: Slug; side?: 'left' | 'right' } | null {
-  const [view, slug, side] = value.split(':')
-
-  if ((view !== 'front' && view !== 'back') || !slug) {
-    return null
-  }
-
-  return {
-    view,
-    slug: slug as Slug,
-    side: side === 'left' || side === 'right' ? side : undefined,
-  }
-}
-
-function formatInjuryLabel(value: string) {
-  const parsed = parseInjuryKey(value)
-
-  if (!parsed) {
-    return value
-  }
-
-  const sideLabel = parsed.side === 'left' ? 'izquierda' : parsed.side === 'right' ? 'derecha' : ''
-  const viewLabel = parsed.view === 'back' ? 'posterior' : 'anterior'
-
-  return [bodyPartLabels[parsed.slug] || parsed.slug, sideLabel, viewLabel].filter(Boolean).join(' ')
 }
 
 function InjuryCaptureForPdf({

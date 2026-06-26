@@ -1,4 +1,5 @@
-import { PDFDocument, PDFImage, PDFPage, PDFFont, rgb, StandardFonts } from 'pdf-lib'
+﻿import { PDFDocument, PDFImage, PDFPage, PDFFont, rgb, StandardFonts } from 'pdf-lib'
+import type { AphForm, AphPayload } from '../types/aph'
 
 const PAGE_WIDTH = 595.28
 const PAGE_HEIGHT = 841.89
@@ -16,78 +17,9 @@ const LABEL_FONT_SIZE = 5.8
 const VALUE_FONT_SIZE = 5.4
 const SECTION_FONT_SIZE = 6.6
 
-interface AphData {
-  codigo: string
-  movil: string
-  placa: string
-  traslado: string
-  tipoTraslado: string
-  prioridad: string
-  fechaAccidente: string
-  horaAccidente: string
-  lugarOcurrencia: string
-  zonaOrigen: string
-  departamentoOrigen: string
-  municipioOrigen: string
-  documento: string
-  primerApellido: string
-  segundoApellido: string
-  primerNombre: string
-  segundoNombre: string
-  estadoCivil: string
-  ocupacion: string
-  sexo: string
-  fechaNacimiento: string
-  edad: string
-  celular: string
-  telefono: string
-  acompanante: string
-  celularAcompanante: string
-  avisarA: string
-  parentesco: string
-  numeroParaAvisar: string
-  numeroParaAvisar2: string
-  direccion: string
-  zonaPaciente: string
-  departamento: string
-  ciudad: string
-  alergia: string
-  patologicos: string
-  medicacion: string
-  liquidos: string
-  aseguradora: string
-  poliza: string
-  planBeneficios: string
-  horaLlegada: string
-  transportadoA: string
-  codigoHabilitacion: string
-  departamentoTraslado: string
-  ciudadTransporte: string
-  estadoPaciente: string
-  causaExterna: string
-  presion: string
-  frecuenciaCardiaca: string
-  frecuenciaRespiratoria: string
-  temperatura: string
-  ro: string
-  rv: string
-  rm: string
-  hallazgos: string
-  diagnosticos: string
-  materiales: string
-  conductor: string
-  documentoConductor: string
-  paramedico: string
-  documentoParamedico: string
-  medico: string
-  documentoMedico: string
-}
+type AphFull = AphPayload
+type AphData = AphForm
 
-interface AphFull extends AphData {
-  lesiones: string[]
-  procedimientos: string[]
-  lesionesImagen?: string | null
-}
 
 interface Ctx {
   doc: PDFDocument
@@ -149,7 +81,7 @@ export async function generatePdf(data: AphFull, logoBase64?: string): Promise<U
   y = drawMaterials(ctx, y, data)
 
   y = drawSection(ctx, y, 'FIRMAS / SELLOS')
-  y = drawSignatures(ctx, y, data)
+  drawSignatures(ctx, y, data)
 
   drawFooter(ctx)
 
@@ -175,7 +107,7 @@ async function drawHeader(ctx: Ctx, y: number, data: AphData, logoBase64?: strin
     }
   }
 
-  drawCenteredText(ctx.page, 'ATENCIÓN PRE-HOSPITALARIA', PAGE_WIDTH / 2, top - 24, ctx.bold, 11.5)
+  drawCenteredText(ctx.page, 'ATENCIÃ“N PRE-HOSPITALARIA', PAGE_WIDTH / 2, top - 24, ctx.bold, 11.5)
 
   ctx.page.drawText('FAPH v1', {
     x: PAGE_WIDTH - 105,
@@ -241,10 +173,10 @@ function drawSection(ctx: Ctx, y: number, title: string): number {
 function drawPatientData(ctx: Ctx, y: number, data: AphData): number {
   y = tableRow(ctx, y, [
     cell('Tipo ID', inferType(data.documento), 1),
-    cell('No. de Identificación', nvl(data.documento), 2),
+    cell('No. de IdentificaciÃ³n', nvl(data.documento), 2),
     cell('Nombres y Apellidos', fullName(data), 4),
     cell('Sexo', nvl(data.sexo), 1),
-    cell('Código CUPS', nvl(data.codigo), 1),
+    cell('CÃ³digo CUPS', nvl(data.codigo), 1),
     cell('Tipo de traslado', nvl(data.tipoTraslado), 2),
     cell('Prioridad', nvl(data.prioridad), 1),
   ])
@@ -252,7 +184,7 @@ function drawPatientData(ctx: Ctx, y: number, data: AphData): number {
   y = tableRow(ctx, y, [
     cell('Fecha de traslado', nvl(data.fechaAccidente), 2),
     cell('Hora de traslado', nvl(data.horaAccidente), 2),
-    cell('Lugar de ocurrencia de la atención', nvl(data.lugarOcurrencia), 5),
+    cell('Lugar de ocurrencia de la atenciÃ³n', nvl(data.lugarOcurrencia), 5),
     cell('Zona', nvl(data.zonaOrigen), 1),
     cell('Departamento', nvl(data.departamentoOrigen), 2),
     cell('Municipio', nvl(data.municipioOrigen), 2),
@@ -262,12 +194,12 @@ function drawPatientData(ctx: Ctx, y: number, data: AphData): number {
     cell('Fecha de Nacimiento', nvl(data.fechaNacimiento), 3),
     cell('Edad', nvl(data.edad), 1),
     cell('Estado Civil', nvl(data.estadoCivil), 3),
-    cell('Ocupación', nvl(data.ocupacion), 3),
+    cell('OcupaciÃ³n', nvl(data.ocupacion), 3),
     cell('Celular', nvl(data.celular), 2),
   ])
 
   y = tableRow(ctx, y, [
-    cell('Dirección de Residencia', nvl(data.direccion), 5),
+    cell('DirecciÃ³n de Residencia', nvl(data.direccion), 5),
     cell('Telefono', nvl(data.telefono), 2),
     cell('Zona', nvl(data.zonaPaciente), 1),
     cell('Departamento', nvl(data.departamento), 2),
@@ -275,7 +207,7 @@ function drawPatientData(ctx: Ctx, y: number, data: AphData): number {
   ])
 
   y = tableRow(ctx, y, [
-    cell('Nombres del Acompañante', nvl(data.acompanante), 4),
+    cell('Nombres del AcompaÃ±ante', nvl(data.acompanante), 4),
     cell('No. de telefono', nvl(data.celularAcompanante), 2),
     cell('Avisar a', nvl(data.avisarA), 3),
     cell('Parentesco', nvl(data.parentesco), 2),
@@ -285,13 +217,13 @@ function drawPatientData(ctx: Ctx, y: number, data: AphData): number {
   y = tableRow(ctx, y, [
     cell('Aseguradora Responsable del paciente', nvl(data.aseguradora), 5),
     cell('Poliza o No carnet', nvl(data.poliza), 3),
-    cell('Descripción del plan de beneficios', nvl(data.planBeneficios), 5),
+    cell('DescripciÃ³n del plan de beneficios', nvl(data.planBeneficios), 5),
   ])
 
   return tableRow(ctx, y, [
     cell('Hora de llegada', nvl(data.horaLlegada), 2),
     cell('Transportado a', nvl(data.transportadoA), 4),
-    cell('Cod Habilitación', nvl(data.codigoHabilitacion), 3),
+    cell('Cod HabilitaciÃ³n', nvl(data.codigoHabilitacion), 3),
     cell('Departamento', nvl(data.departamentoTraslado), 2),
     cell('Municipio', nvl(data.ciudadTransporte), 2),
     cell('Estado', nvl(data.estadoPaciente), 1),
@@ -554,7 +486,7 @@ function drawFooter(ctx: Ctx): void {
   })
 
   ctx.page.drawText(
-      'El profesional de la salud certifica que las lesiones en el presente documento corresponden a hallazgos clínicos ocurridos como consecuencia de accidente de transito.',
+      'El profesional de la salud certifica que las lesiones en el presente documento corresponden a hallazgos clÃ­nicos ocurridos como consecuencia de accidente de transito.',
       {
         x: MARGIN_X + 4,
         y: footerY - 8,
@@ -563,7 +495,7 @@ function drawFooter(ctx: Ctx): void {
       },
   )
 
-  ctx.page.drawText('Artículo 32 Decreto 056 de 2015 Ministerio de Salud y Protección Social', {
+  ctx.page.drawText('ArtÃ­culo 32 Decreto 056 de 2015 Ministerio de Salud y ProtecciÃ³n Social', {
     x: MARGIN_X + 4,
     y: footerY - 16,
     font: ctx.normal,
