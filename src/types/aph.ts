@@ -91,6 +91,15 @@ export type AphForm = {
   direccionResidenciaPropietario: string
   telefonoResidenciaPropietario: string
   codigoMunicipioResidenciaPropietario: string
+  tipoDocumentoConductorVehiculo: string
+  numeroDocumentoConductorVehiculo: string
+  primerNombreConductorVehiculo: string
+  segundoNombreConductorVehiculo: string
+  primerApellidoConductorVehiculo: string
+  segundoApellidoConductorVehiculo: string
+  codigoMunicipioResidenciaConductorVehiculo: string
+  direccionResidenciaConductorVehiculo: string
+  telefonoResidenciaConductorVehiculo: string
   materiales: string
   conductor: string
   documentoConductor: string

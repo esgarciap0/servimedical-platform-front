@@ -64,6 +64,7 @@ import {
   stickyActionHeaderSx,
   tableColumns,
   tabs,
+  tipoDocumentoConductorOptions,
   tipoDocumentoPropietarioOptions,
   tipoTrasladoOptions,
   tipoVehiculoOptions,
@@ -224,6 +225,43 @@ export function Prehospitalizacion() {
       }
       if (requireOwnerResidenceFields && (!form.codigoMunicipioResidenciaPropietario || form.codigoMunicipioResidenciaPropietario.trim() === '')) {
         errors.codigoMunicipioResidenciaPropietario = true
+      }
+    }
+
+    if (tabIndex === 9) {
+      const showDriverDocs =
+        form.naturalezaEvento === '01' &&
+        (form.estadoAseguramiento === '2' ||
+          form.estadoAseguramiento === '4' ||
+          form.estadoAseguramiento === '6' ||
+          form.estadoAseguramiento === '7' ||
+          form.estadoAseguramiento === '8')
+      if (showDriverDocs && (!form.tipoDocumentoConductorVehiculo || form.tipoDocumentoConductorVehiculo.trim() === '')) {
+        errors.tipoDocumentoConductorVehiculo = true
+      }
+      if (showDriverDocs && (!form.numeroDocumentoConductorVehiculo || form.numeroDocumentoConductorVehiculo.trim() === '')) {
+        errors.numeroDocumentoConductorVehiculo = true
+      }
+      if (showDriverDocs && (!form.primerNombreConductorVehiculo || form.primerNombreConductorVehiculo.trim() === '')) {
+        errors.primerNombreConductorVehiculo = true
+      }
+      if (showDriverDocs && (!form.segundoNombreConductorVehiculo || form.segundoNombreConductorVehiculo.trim() === '')) {
+        errors.segundoNombreConductorVehiculo = true
+      }
+      if (showDriverDocs && (!form.primerApellidoConductorVehiculo || form.primerApellidoConductorVehiculo.trim() === '')) {
+        errors.primerApellidoConductorVehiculo = true
+      }
+      if (showDriverDocs && (!form.segundoApellidoConductorVehiculo || form.segundoApellidoConductorVehiculo.trim() === '')) {
+        errors.segundoApellidoConductorVehiculo = true
+      }
+      if (showDriverDocs && (!form.codigoMunicipioResidenciaConductorVehiculo || form.codigoMunicipioResidenciaConductorVehiculo.trim() === '')) {
+        errors.codigoMunicipioResidenciaConductorVehiculo = true
+      }
+      if (showDriverDocs && (!form.direccionResidenciaConductorVehiculo || form.direccionResidenciaConductorVehiculo.trim() === '')) {
+        errors.direccionResidenciaConductorVehiculo = true
+      }
+      if (showDriverDocs && (!form.telefonoResidenciaConductorVehiculo || form.telefonoResidenciaConductorVehiculo.trim() === '')) {
+        errors.telefonoResidenciaConductorVehiculo = true
       }
     }
 
@@ -868,6 +906,7 @@ export function Prehospitalizacion() {
                   {tab === 6 && <CrewTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} />}
                   {tab === 7 && <VehicleTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} />}
                   {tab === 8 && <OwnerTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} />}
+                  {tab === 9 && <DriverTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} />}
                 </Paper>
 
                 <Box
@@ -1475,6 +1514,45 @@ function OwnerTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; 
                       <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint select label="Código municipio residencia propietario" value={form.codigoMunicipioResidenciaPropietario} onChange={(value) => updateField('codigoMunicipioResidenciaPropietario', value)} options={municipioOptions} error={!!fieldErrors.codigoMunicipioResidenciaPropietario} excelRef="AL: Codigo_del_municipio_de_residencia_del_propietario" devMode={devMode} /></Grid>
                     </>
                 )}
+              </>
+          )}
+        </Grid>
+      </Stack>
+  )
+}
+
+function DriverTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean>; devMode?: boolean }) {
+  const showDriverDocs = form.naturalezaEvento === '01' && (form.estadoAseguramiento === '2' || form.estadoAseguramiento === '4' || form.estadoAseguramiento === '6' || form.estadoAseguramiento === '7' || form.estadoAseguramiento === '8')
+
+  useEffect(() => {
+    if (!showDriverDocs) {
+      if (form.tipoDocumentoConductorVehiculo) updateField('tipoDocumentoConductorVehiculo', '')
+      if (form.numeroDocumentoConductorVehiculo) updateField('numeroDocumentoConductorVehiculo', '')
+      if (form.primerNombreConductorVehiculo) updateField('primerNombreConductorVehiculo', '')
+      if (form.segundoNombreConductorVehiculo) updateField('segundoNombreConductorVehiculo', '')
+      if (form.primerApellidoConductorVehiculo) updateField('primerApellidoConductorVehiculo', '')
+      if (form.segundoApellidoConductorVehiculo) updateField('segundoApellidoConductorVehiculo', '')
+      if (form.codigoMunicipioResidenciaConductorVehiculo) updateField('codigoMunicipioResidenciaConductorVehiculo', '')
+      if (form.direccionResidenciaConductorVehiculo) updateField('direccionResidenciaConductorVehiculo', '')
+      if (form.telefonoResidenciaConductorVehiculo) updateField('telefonoResidenciaConductorVehiculo', '')
+    }
+  }, [form.naturalezaEvento, form.estadoAseguramiento, form.tipoDocumentoConductorVehiculo, form.numeroDocumentoConductorVehiculo, form.primerNombreConductorVehiculo, form.segundoNombreConductorVehiculo, form.primerApellidoConductorVehiculo, form.segundoApellidoConductorVehiculo, form.codigoMunicipioResidenciaConductorVehiculo, form.direccionResidenciaConductorVehiculo, form.telefonoResidenciaConductorVehiculo, showDriverDocs])
+
+  return (
+      <Stack spacing={0.75}>
+        <SectionTitle compact>Datos del conductor</SectionTitle>
+        <Grid container spacing={0.75}>
+          {showDriverDocs && (
+              <>
+                <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint select label="Tipo doc. conductor" value={form.tipoDocumentoConductorVehiculo} onChange={(value) => updateField('tipoDocumentoConductorVehiculo', value)} options={tipoDocumentoConductorOptions} error={!!fieldErrors.tipoDocumentoConductorVehiculo} excelRef="AM: Tipo_de_documento_de_identidad_del_conductor" devMode={devMode} /></Grid>
+                <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint alphanumeric maxLength={20} label="Número doc. conductor" value={form.numeroDocumentoConductorVehiculo} onChange={(value) => updateField('numeroDocumentoConductorVehiculo', value)} error={!!fieldErrors.numeroDocumentoConductorVehiculo} excelRef="AN: Numero_de_documento_de_identidad_del_conductor" devMode={devMode} /></Grid>
+                <Grid size={{ xs: 12, md: 4 }}><FormInput compact requiredHint lettersOnly maxLength={30} label="Primer nombre del conductor" value={form.primerNombreConductorVehiculo} onChange={(value) => updateField('primerNombreConductorVehiculo', value)} error={!!fieldErrors.primerNombreConductorVehiculo} excelRef="AO: Primer_nombre_del_conductor" devMode={devMode} /></Grid>
+                <Grid size={{ xs: 12, md: 4 }}><FormInput compact requiredHint lettersOnly maxLength={30} label="Segundo nombre del conductor" value={form.segundoNombreConductorVehiculo} onChange={(value) => updateField('segundoNombreConductorVehiculo', value)} error={!!fieldErrors.segundoNombreConductorVehiculo} excelRef="AP: Segundo_nombre_del_conductor" devMode={devMode} /></Grid>
+                <Grid size={{ xs: 12, md: 4 }}><FormInput compact requiredHint lettersOnly maxLength={30} label="Primer apellido del conductor" value={form.primerApellidoConductorVehiculo} onChange={(value) => updateField('primerApellidoConductorVehiculo', value)} error={!!fieldErrors.primerApellidoConductorVehiculo} excelRef="AQ: Primer_apellido_del_conductor" devMode={devMode} /></Grid>
+                <Grid size={{ xs: 12, md: 4 }}><FormInput compact requiredHint lettersOnly maxLength={30} label="Segundo apellido del conductor" value={form.segundoApellidoConductorVehiculo} onChange={(value) => updateField('segundoApellidoConductorVehiculo', value)} error={!!fieldErrors.segundoApellidoConductorVehiculo} excelRef="AR: Segundo_apellido_del_conductor" devMode={devMode} /></Grid>
+                <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint select label="Código municipio residencia conductor" value={form.codigoMunicipioResidenciaConductorVehiculo} onChange={(value) => updateField('codigoMunicipioResidenciaConductorVehiculo', value)} options={municipioOptions} error={!!fieldErrors.codigoMunicipioResidenciaConductorVehiculo} excelRef="AS: Codigo_del_municipio_de_residencia_del_conductor" devMode={devMode} /></Grid>
+                <Grid size={{ xs: 12, md: 6 }}><FormInput compact requiredHint address maxLength={100} label="Dirección de residencia del conductor" value={form.direccionResidenciaConductorVehiculo} onChange={(value) => updateField('direccionResidenciaConductorVehiculo', value)} error={!!fieldErrors.direccionResidenciaConductorVehiculo} excelRef="AT: Direccion_de_residencia_del_conductor" devMode={devMode} /></Grid>
+                <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint numeric maxLength={10} label="Teléfono de residencia del conductor" value={form.telefonoResidenciaConductorVehiculo} onChange={(value) => updateField('telefonoResidenciaConductorVehiculo', value)} error={!!fieldErrors.telefonoResidenciaConductorVehiculo} excelRef="AU: Telefono_de_residencia_del_conductor" devMode={devMode} /></Grid>
               </>
           )}
         </Grid>

@@ -11,6 +11,7 @@ export const tabs = [
   'Tripulacion',
   'Datos Vehiculo',
   'Datos Propietario',
+  'Datos Conductor',
 ] as const
 
 export const causes = [
@@ -140,6 +141,19 @@ export const tipoDocumentoPropietarioOptions = [
   { value: 'PT', label: 'Permiso de Protección Temporal' },
   { value: 'NI', label: 'NIT' },
 ] as const
+export const tipoDocumentoConductorOptions = [
+  { value: 'TI', label: 'Tarjeta de identidad' },
+  { value: 'CC', label: 'Cédula de ciudadanía' },
+  { value: 'CE', label: 'Cédula de extranjería' },
+  { value: 'CD', label: 'Carné diplomático' },
+  { value: 'PA', label: 'Pasaporte' },
+  { value: 'PE', label: 'Permiso especial de permanencia' },
+  { value: 'DE', label: 'Documento extranjero' },
+  { value: 'PT', label: 'Permiso de protección temporal' },
+  { value: 'SC', label: 'Salvoconducto' },
+  { value: 'AS', label: 'Adulto sin identificación' },
+  { value: 'MS', label: 'Menor sin identificación' },
+] as const
 export const municipioOptions = [
   { value: '23001', label: 'MONTERÍA' },
   { value: '23068', label: 'AYAPEL' },
@@ -253,6 +267,7 @@ export const requiredFieldsByTab: Record<number, (keyof AphForm)[]> = {
   6: ['conductor', 'documentoConductor', 'paramedico', 'documentoParamedico', 'medico', 'documentoMedico'],
   7: [],
   8: [],
+  9: [],
 }
 
 export type TableColumn = {
