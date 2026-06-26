@@ -85,6 +85,7 @@ export type AphForm = {
   hallazgos: string
   diagnosticos: string
   primerNombrePropietario: string
+  segundoNombrePropietario: string
   materiales: string
   conductor: string
   documentoConductor: string

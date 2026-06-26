@@ -76,6 +76,7 @@ export const initialForm: AphForm = {
   hallazgos: '',
   diagnosticos: '',
   primerNombrePropietario: '',
+  segundoNombrePropietario: '',
   materiales: '',
   conductor: '',
   documentoConductor: '',
