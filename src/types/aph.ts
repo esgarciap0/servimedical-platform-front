@@ -13,6 +13,7 @@ export type AphForm = {
   codigo: string
   movil: string
   placa: string
+  esAtencionInicialPacienteRemitidoOControl: string
   traslado: string
   tipoTraslado: string
   prioridad: string

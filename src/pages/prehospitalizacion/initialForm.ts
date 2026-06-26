@@ -4,6 +4,7 @@ export const initialForm: AphForm = {
   codigo: '',
   movil: '',
   placa: '',
+  esAtencionInicialPacienteRemitidoOControl: '1',
   traslado: 'PRIMARIO',
   tipoTraslado: 'BASICO',
   prioridad: '1',

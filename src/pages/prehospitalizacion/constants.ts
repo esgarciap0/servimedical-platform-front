@@ -29,6 +29,7 @@ export const causes = [
 export const trasladoOptions = ['PRIMARIO', 'SECUNDARIO'] as const
 export const tipoTrasladoOptions = ['BASICO', 'MEDICALIZADO'] as const
 export const prioridadOptions = ['1', '2', '3', '4'] as const
+export const atencionInicialOptions = ['1', '2', '3', '4', '5', '6', '7', '8'] as const
 export const zonaOptions = [
   { value: 'U', label: 'Urbano' },
   { value: 'R', label: 'Rural' },
