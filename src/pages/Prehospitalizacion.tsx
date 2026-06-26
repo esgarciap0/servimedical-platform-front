@@ -1433,8 +1433,9 @@ function OwnerTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; 
       if (form.numeroDocumentoPropietario) updateField('numeroDocumentoPropietario', '')
       if (form.segundoNombrePropietario) updateField('segundoNombrePropietario', '')
       if (form.primerApellidoPropietario) updateField('primerApellidoPropietario', '')
+      if (form.segundoApellidoPropietario) updateField('segundoApellidoPropietario', '')
     }
-  }, [form.estadoAseguramiento, form.naturalezaEvento, form.tipoDocumentoPropietario, form.numeroDocumentoPropietario, form.segundoNombrePropietario, form.primerApellidoPropietario, showOwnerDocs])
+  }, [form.estadoAseguramiento, form.naturalezaEvento, form.tipoDocumentoPropietario, form.numeroDocumentoPropietario, form.segundoNombrePropietario, form.primerApellidoPropietario, form.segundoApellidoPropietario, showOwnerDocs])
 
   return (
       <Stack spacing={0.75}>
@@ -1447,6 +1448,7 @@ function OwnerTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; 
                 <Grid size={{ xs: 12, md: 4 }}><FormInput compact requiredHint label="Primer nombre / Razón social" maxLength={30} value={form.primerNombrePropietario} onChange={(value) => updateField('primerNombrePropietario', value)} error={!!fieldErrors.primerNombrePropietario} excelRef="AF: Primer_nombre_del_propietario_o_razon_social" devMode={devMode} /></Grid>
                 <Grid size={{ xs: 12, md: 4 }}><FormInput compact lettersOnly maxLength={30} label="Segundo nombre del propietario" value={form.segundoNombrePropietario} onChange={(value) => updateField('segundoNombrePropietario', value)} excelRef="AG: Segundo_nombre_del_propietario" devMode={devMode} /></Grid>
                 <Grid size={{ xs: 12, md: 4 }}><FormInput compact lettersOnly maxLength={30} label="Primer apellido del propietario" value={form.primerApellidoPropietario} onChange={(value) => updateField('primerApellidoPropietario', value)} excelRef="AH: Primer_apellido_del_propietario" devMode={devMode} /></Grid>
+                <Grid size={{ xs: 12, md: 4 }}><FormInput compact lettersOnly maxLength={30} label="Segundo apellido del propietario" value={form.segundoApellidoPropietario} onChange={(value) => updateField('segundoApellidoPropietario', value)} excelRef="AI: Segundo_apellido_del_propietario" devMode={devMode} /></Grid>
               </>
           )}
         </Grid>

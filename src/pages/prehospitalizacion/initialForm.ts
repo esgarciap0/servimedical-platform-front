@@ -78,6 +78,7 @@ export const initialForm: AphForm = {
   primerNombrePropietario: '',
   segundoNombrePropietario: '',
   primerApellidoPropietario: '',
+  segundoApellidoPropietario: '',
   materiales: '',
   conductor: '',
   documentoConductor: '',
