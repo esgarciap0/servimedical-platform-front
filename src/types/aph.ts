@@ -88,6 +88,9 @@ export type AphForm = {
   segundoNombrePropietario: string
   primerApellidoPropietario: string
   segundoApellidoPropietario: string
+  direccionResidenciaPropietario: string
+  telefonoResidenciaPropietario: string
+  codigoMunicipioResidenciaPropietario: string
   materiales: string
   conductor: string
   documentoConductor: string

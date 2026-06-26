@@ -212,8 +212,18 @@ export function Prehospitalizacion() {
           form.estadoAseguramiento === '4' ||
           form.estadoAseguramiento === '6' ||
           form.estadoAseguramiento === '8')
+      const requireOwnerResidenceFields = showOwnerDocs && form.tipoDocumentoPropietario !== 'NI'
       if (showOwnerDocs && (!form.primerNombrePropietario || form.primerNombrePropietario.trim() === '')) {
         errors.primerNombrePropietario = true
+      }
+      if (requireOwnerResidenceFields && (!form.direccionResidenciaPropietario || form.direccionResidenciaPropietario.trim() === '')) {
+        errors.direccionResidenciaPropietario = true
+      }
+      if (requireOwnerResidenceFields && (!form.telefonoResidenciaPropietario || form.telefonoResidenciaPropietario.trim() === '')) {
+        errors.telefonoResidenciaPropietario = true
+      }
+      if (requireOwnerResidenceFields && (!form.codigoMunicipioResidenciaPropietario || form.codigoMunicipioResidenciaPropietario.trim() === '')) {
+        errors.codigoMunicipioResidenciaPropietario = true
       }
     }
 
@@ -1426,6 +1436,7 @@ function VehicleTab({ form, updateField, fieldErrors, devMode }: { form: AphForm
 
 function OwnerTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean>; devMode?: boolean }) {
   const showOwnerDocs = form.naturalezaEvento === '01' && (form.estadoAseguramiento === '2' || form.estadoAseguramiento === '4' || form.estadoAseguramiento === '6' || form.estadoAseguramiento === '8')
+  const showOwnerResidenceFields = showOwnerDocs && form.tipoDocumentoPropietario !== 'NI'
 
   useEffect(() => {
     if (!showOwnerDocs) {
@@ -1434,8 +1445,16 @@ function OwnerTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; 
       if (form.segundoNombrePropietario) updateField('segundoNombrePropietario', '')
       if (form.primerApellidoPropietario) updateField('primerApellidoPropietario', '')
       if (form.segundoApellidoPropietario) updateField('segundoApellidoPropietario', '')
+      if (form.direccionResidenciaPropietario) updateField('direccionResidenciaPropietario', '')
+      if (form.telefonoResidenciaPropietario) updateField('telefonoResidenciaPropietario', '')
+      if (form.codigoMunicipioResidenciaPropietario) updateField('codigoMunicipioResidenciaPropietario', '')
     }
-  }, [form.estadoAseguramiento, form.naturalezaEvento, form.tipoDocumentoPropietario, form.numeroDocumentoPropietario, form.segundoNombrePropietario, form.primerApellidoPropietario, form.segundoApellidoPropietario, showOwnerDocs])
+    if (form.tipoDocumentoPropietario === 'NI') {
+      if (form.direccionResidenciaPropietario) updateField('direccionResidenciaPropietario', '')
+      if (form.telefonoResidenciaPropietario) updateField('telefonoResidenciaPropietario', '')
+      if (form.codigoMunicipioResidenciaPropietario) updateField('codigoMunicipioResidenciaPropietario', '')
+    }
+  }, [form.estadoAseguramiento, form.naturalezaEvento, form.tipoDocumentoPropietario, form.numeroDocumentoPropietario, form.segundoNombrePropietario, form.primerApellidoPropietario, form.segundoApellidoPropietario, form.direccionResidenciaPropietario, form.telefonoResidenciaPropietario, form.codigoMunicipioResidenciaPropietario, showOwnerDocs])
 
   return (
       <Stack spacing={0.75}>
@@ -1449,6 +1468,13 @@ function OwnerTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; 
                 <Grid size={{ xs: 12, md: 4 }}><FormInput compact lettersOnly maxLength={30} label="Segundo nombre del propietario" value={form.segundoNombrePropietario} onChange={(value) => updateField('segundoNombrePropietario', value)} excelRef="AG: Segundo_nombre_del_propietario" devMode={devMode} /></Grid>
                 <Grid size={{ xs: 12, md: 4 }}><FormInput compact lettersOnly maxLength={30} label="Primer apellido del propietario" value={form.primerApellidoPropietario} onChange={(value) => updateField('primerApellidoPropietario', value)} excelRef="AH: Primer_apellido_del_propietario" devMode={devMode} /></Grid>
                 <Grid size={{ xs: 12, md: 4 }}><FormInput compact lettersOnly maxLength={30} label="Segundo apellido del propietario" value={form.segundoApellidoPropietario} onChange={(value) => updateField('segundoApellidoPropietario', value)} excelRef="AI: Segundo_apellido_del_propietario" devMode={devMode} /></Grid>
+                {showOwnerResidenceFields && (
+                    <>
+                      <Grid size={{ xs: 12, md: 6 }}><FormInput compact requiredHint address maxLength={100} label="Dirección de residencia del propietario" value={form.direccionResidenciaPropietario} onChange={(value) => updateField('direccionResidenciaPropietario', value)} error={!!fieldErrors.direccionResidenciaPropietario} excelRef="AJ: Direccion_de_residencia_del_propietario" devMode={devMode} /></Grid>
+                      <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint numeric maxLength={10} label="Teléfono de residencia del propietario" value={form.telefonoResidenciaPropietario} onChange={(value) => updateField('telefonoResidenciaPropietario', value)} error={!!fieldErrors.telefonoResidenciaPropietario} excelRef="AK: Telefono_de_residencia_del_propietario" devMode={devMode} /></Grid>
+                      <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint select label="Código municipio residencia propietario" value={form.codigoMunicipioResidenciaPropietario} onChange={(value) => updateField('codigoMunicipioResidenciaPropietario', value)} options={municipioOptions} error={!!fieldErrors.codigoMunicipioResidenciaPropietario} excelRef="AL: Codigo_del_municipio_de_residencia_del_propietario" devMode={devMode} /></Grid>
+                    </>
+                )}
               </>
           )}
         </Grid>
