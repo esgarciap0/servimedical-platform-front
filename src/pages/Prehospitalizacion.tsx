@@ -24,6 +24,7 @@ import {
   Radio,
   Snackbar,
   Stack,
+  Switch,
   Tab,
   Table,
   TableBody,
@@ -47,11 +48,14 @@ import type { AphForm, AphResponse, AphSortKey, SortOrder } from '../types/aph'
 import {
   actionButtonSx,
   ambulanceOptions,
+  aseguramientoOptions,
   causes,
-  estadoAseguramientoObligaPropietario,
-  estadoAseguramientoOptions,
-  naturalezaEventoOptions,
+  condicionOptions,
+  documentTypeOptions,
+  municipioOptions,
+  naturalezaOptions,
   planBeneficiosOptions,
+  poblacionOptions,
   prioridadOptions,
   procedures,
   requiredFieldsByTab,
@@ -60,16 +64,17 @@ import {
   stickyActionHeaderSx,
   tableColumns,
   tabs,
-  tipoDocumentoOptions,
+  tipoDocumentoPropietarioOptions,
   tipoTrasladoOptions,
+  tipoVehiculoOptions,
   trasladoOptions,
   zonaOptions,
+  zonaOrigenOptions,
 } from './prehospitalizacion/constants'
 import { initialForm } from './prehospitalizacion/initialForm'
 import {
   compareSortValues,
   formatInjuryLabel,
-  getDocumentType,
   getPatientName,
   getSortValue,
   makeInjuryKey,
@@ -83,6 +88,7 @@ export function Prehospitalizacion() {
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState(0)
   const [editId, setEditId] = useState<number | null>(null)
+  const [devMode, setDevMode] = useState(() => localStorage.getItem('aph_dev_mode') === 'true')
   const [form, setForm] = useState<AphForm>(initialForm)
   const [selectedInjuries, setSelectedInjuries] = useState<string[]>([])
   const [selectedProcedures, setSelectedProcedures] = useState<string[]>([])
@@ -199,21 +205,27 @@ export function Prehospitalizacion() {
       }
     })
 
-    // Conditional validation: Datos del propietario (tab 1)
-    if (tabIndex === 1) {
-      const isPropietarioRequired =
+    if (tabIndex === 8) {
+      const showOwnerDocs =
         form.naturalezaEvento === '01' &&
-        estadoAseguramientoObligaPropietario.includes(form.estadoAseguramiento as typeof estadoAseguramientoObligaPropietario[number])
-      if (isPropietarioRequired && (!form.primerNombrePropietario || form.primerNombrePropietario.trim() === '')) {
+        (form.estadoAseguramiento === '2' ||
+          form.estadoAseguramiento === '4' ||
+          form.estadoAseguramiento === '6' ||
+          form.estadoAseguramiento === '8')
+      if (showOwnerDocs && (!form.primerNombrePropietario || form.primerNombrePropietario.trim() === '')) {
         errors.primerNombrePropietario = true
       }
     }
 
-    if (tabIndex === 4 && selectedInjuries.length === 0) {
+    if (tabIndex === 3 && selectedInjuries.length === 0) {
       errors.lesiones = true
     }
 
-    if (tabIndex === 5 && selectedProcedures.length === 0) {
+    if (tabIndex === 3 && form.hallazgos.trim().length < 100) {
+      errors.hallazgos = true
+    }
+
+    if (tabIndex === 4 && selectedProcedures.length === 0) {
       errors.procedimientos = true
     }
 
@@ -266,7 +278,7 @@ export function Prehospitalizacion() {
   const handleNext = async () => {
     if (!validateTab(tab)) return
 
-    if (tab === 4) {
+    if (tab === 3) {
       const image = await captureBodyMapImage()
 
       if (!image) {
@@ -304,12 +316,12 @@ export function Prehospitalizacion() {
   const handleSave = async () => {
     let finalLesionesImagen = lesionesImagen
 
-    if (!finalLesionesImagen && tab === 4) {
+    if (!finalLesionesImagen && tab === 3) {
       finalLesionesImagen = await captureBodyMapImage()
     }
 
     if (!finalLesionesImagen) {
-      setTab(4)
+      setTab(3)
       setSnackbar({
         message: 'No se encontro la imagen de ubicacion de lesiones. Revisa el paso Examen fisico y vuelve a guardar.',
         fields: [],
@@ -632,7 +644,7 @@ export function Prehospitalizacion() {
                               <TableCell>{row.createdAt?.split('T')[0] || ''}</TableCell>
                               <TableCell>{row.movil || ''}</TableCell>
                               <TableCell>{row.aseguradora || ''}</TableCell>
-                              <TableCell>{getDocumentType(row.documento, row.tipoDocumento)}</TableCell>
+                              <TableCell>{row.tipoDocumento || ''}</TableCell>
                               <TableCell>{row.documento || ''}</TableCell>
 
                               <TableCell title={getPatientName(row)}>
@@ -740,9 +752,18 @@ export function Prehospitalizacion() {
         >
           <DialogTitle sx={{ bgcolor: '#0f766e', color: 'white', p: 0 }}>
             <Box sx={{ px: { xs: 1.25, md: 1.5 }, py: { xs: 0.65, md: 0.75 }, pr: 5 }}>
-              <Typography sx={{ fontWeight: 900, fontSize: { xs: 15, md: 16 }, lineHeight: 1.1 }}>
-                {editId ? `Editar APH #${editId}` : 'Registrar formato APH'}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography sx={{ fontWeight: 900, fontSize: { xs: 15, md: 16 }, lineHeight: 1.1 }}>
+                  {editId ? `Editar APH #${editId}` : 'Registrar formato APH'}
+                </Typography>
+                <Tooltip title="Activar modo desarrollador (muestra la referencia a la columna del Excel)">
+                  <FormControlLabel
+                      control={<Switch size="small" checked={devMode} onChange={(_, v) => { setDevMode(v); localStorage.setItem('aph_dev_mode', String(v)) }} sx={{ '& .MuiSwitch-thumb': { bgcolor: devMode ? '#facc15' : '#94a3b8' } }} />}
+                      label={<Typography sx={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.75)' }}>DEV</Typography>}
+                      sx={{ m: 0, ml: 'auto' }}
+                  />
+                </Tooltip>
+              </Box>
               <Typography sx={{ opacity: 0.85, fontSize: { xs: 11.5, md: 12 } }}>
                 Paso {tab + 1} de {tabs.length}: {tabs[tab]}
               </Typography>
@@ -812,28 +833,31 @@ export function Prehospitalizacion() {
                     }}
                     elevation={0}
                 >
-                  {tab === 0 && <PatientTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
-                  {tab === 1 && <OwnerTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
-                  {tab === 2 && <InsuranceTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
-                  {tab === 3 && <CauseTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
-                  {tab === 4 && (
+                  {tab === 0 && <PatientTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} />}
+                  {tab === 1 && <InsuranceTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} />}
+                  {tab === 2 && <CauseTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} />}
+                  {tab === 3 && (
                       <PhysicalExamTab
                           form={form}
                           updateField={updateField}
                           fieldErrors={fieldErrors}
                           selectedInjuries={selectedInjuries}
                           onToggleInjury={toggleInjury}
+                          devMode={devMode}
                       />
                   )}
-                  {tab === 5 && (
+                  {tab === 4 && (
                       <ProcedureTab
                           selectedProcedures={selectedProcedures}
                           onToggleProcedure={toggleProcedure}
                           fieldErrors={fieldErrors}
+                          devMode={devMode}
                       />
                   )}
-                  {tab === 6 && <MaterialsTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
-                  {tab === 7 && <CrewTab form={form} updateField={updateField} fieldErrors={fieldErrors} />}
+                  {tab === 5 && <MaterialsTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} />}
+                  {tab === 6 && <CrewTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} />}
+                  {tab === 7 && <VehicleTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} />}
+                  {tab === 8 && <OwnerTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} />}
                 </Paper>
 
                 <Box
@@ -950,7 +974,7 @@ function AphMobileCard({
                 {getPatientName(row) || 'Paciente sin nombre'}
               </Typography>
               <Typography sx={{ color: 'text.secondary', fontSize: 12 }}>
-                {getDocumentType(row.documento, row.tipoDocumento)} {row.documento || 'Sin documento'}
+                {row.tipoDocumento || ''} {row.documento || 'Sin documento'}
               </Typography>
             </Box>
             <Chip label={row.codigo || `#${row.id}`} size="small" sx={{ fontWeight: 900, bgcolor: '#e0f2fe', color: '#075985' }} />
@@ -993,39 +1017,46 @@ function MobileInfo({ label, value }: { label: string; value: string }) {
 }
 
 
-function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean> }) {
+function PatientTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean>; devMode?: boolean }) {
   return (
       <Stack spacing={0.75}>
         <Grid container spacing={0.75}>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Codigo APH" value={form.codigo} onChange={(value) => updateField('codigo', value)} error={!!fieldErrors.codigo} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Movil" select value={form.movil} onChange={(value) => updateField('movil', value)} options={ambulanceOptions} error={!!fieldErrors.movil} /></Grid>
-          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Placa" value={form.placa} onChange={(value) => updateField('placa', value)} error={!!fieldErrors.placa} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Placa" alphanumeric maxLength={10} value={form.placa} onChange={(value) => updateField('placa', value)} error={!!fieldErrors.placa} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Traslado" select value={form.traslado} onChange={(value) => updateField('traslado', value)} options={trasladoOptions} error={!!fieldErrors.traslado} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Tipo traslado" select value={form.tipoTraslado} onChange={(value) => updateField('tipoTraslado', value)} options={tipoTrasladoOptions} error={!!fieldErrors.tipoTraslado} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Prioridad" select value={form.prioridad} onChange={(value) => updateField('prioridad', value)} options={prioridadOptions} error={!!fieldErrors.prioridad} /></Grid>
-          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Fecha Accidente" type="date" value={form.fechaAccidente} onChange={(value) => updateField('fechaAccidente', value)} error={!!fieldErrors.fechaAccidente} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Fecha Accidente" type="date" value={form.fechaAccidente} onChange={(value) => updateField('fechaAccidente', value)} error={!!fieldErrors.fechaAccidente} excelRef="P: Fecha_de_ocurrencia_evento" devMode={devMode} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Hora Accidente" type="time" value={form.horaAccidente} onChange={(value) => updateField('horaAccidente', value)} error={!!fieldErrors.horaAccidente} /></Grid>
-          <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Lugar de Ocurrencia" value={form.lugarOcurrencia} onChange={(value) => updateField('lugarOcurrencia', value)} error={!!fieldErrors.lugarOcurrencia} /></Grid>
-          <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Naturaleza evento" select value={form.naturalezaEvento} onChange={(value) => updateField('naturalezaEvento', value)} options={naturalezaEventoOptions} /></Grid>
-          <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Estado aseguramiento" select value={form.estadoAseguramiento} onChange={(value) => updateField('estadoAseguramiento', value)} options={estadoAseguramientoOptions} /></Grid>
-          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Zona Origen" select value={form.zonaOrigen} onChange={(value) => updateField('zonaOrigen', value)} options={zonaOptions} error={!!fieldErrors.zonaOrigen} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Naturaleza del Evento" select value={form.naturalezaEvento} onChange={(value) => updateField('naturalezaEvento', value)} options={naturalezaOptions} error={!!fieldErrors.naturalezaEvento} excelRef="M: Naturaleza_del_evento" devMode={devMode} /></Grid>
+          {form.naturalezaEvento === '17' && (
+              <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Descripción del otro evento" value={form.descripcionOtroEvento} onChange={(value) => updateField('descripcionOtroEvento', value)} excelRef="N: Descripcion_del_otro_evento" devMode={devMode} /></Grid>
+          )}
+          {form.naturalezaEvento === '01' && (
+              <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Condición Víctima" select value={form.condicionVictima} onChange={(value) => updateField('condicionVictima', value)} options={condicionOptions} excelRef="O: Condicion_victima" devMode={devMode} /></Grid>
+          )}
+          <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Dirección de ocurrencia" address maxLength={100} value={form.lugarOcurrencia} onChange={(value) => updateField('lugarOcurrencia', value)} error={!!fieldErrors.lugarOcurrencia} excelRef="S: Direccion_de_ocurrencia_evento" devMode={devMode} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Zona Origen" select value={form.zonaOrigen} onChange={(value) => updateField('zonaOrigen', value)} options={zonaOrigenOptions} error={!!fieldErrors.zonaOrigen} excelRef="Q: Zona_de_ocurrencia_evento" devMode={devMode} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Código municipio ocurrencia" select value={form.codigoMunicipioOcurrencia} onChange={(value) => updateField('codigoMunicipioOcurrencia', value)} options={municipioOptions} excelRef="R: Codigo_municipio_ocurrencia_evento" devMode={devMode} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Dep.Origen" value={form.departamentoOrigen} onChange={(value) => updateField('departamentoOrigen', value)} error={!!fieldErrors.departamentoOrigen} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Municipio Origen" value={form.municipioOrigen} onChange={(value) => updateField('municipioOrigen', value)} error={!!fieldErrors.municipioOrigen} /></Grid>
         </Grid>
 
         <SectionTitle compact>Datos del paciente o victima</SectionTitle>
         <Grid container spacing={0.75}>
-          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Tipo documento" select value={form.tipoDocumento} onChange={(value) => updateField('tipoDocumento', value)} options={tipoDocumentoOptions} error={!!fieldErrors.tipoDocumento} /></Grid>
-          <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Numero de documento" value={form.documento} onChange={(value) => updateField('documento', value)} error={!!fieldErrors.documento} /></Grid>
-          <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Primer Apellido" value={form.primerApellido} onChange={(value) => updateField('primerApellido', value)} error={!!fieldErrors.primerApellido} /></Grid>
-          <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Segundo Apellido" value={form.segundoApellido} onChange={(value) => updateField('segundoApellido', value)} error={!!fieldErrors.segundoApellido} /></Grid>
-          <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Primer Nombre" value={form.primerNombre} onChange={(value) => updateField('primerNombre', value)} error={!!fieldErrors.primerNombre} /></Grid>
-          <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Segundo Nombre" value={form.segundoNombre} onChange={(value) => updateField('segundoNombre', value)} error={!!fieldErrors.segundoNombre} /></Grid>
-          <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Estado Civil" value={form.estadoCivil} onChange={(value) => updateField('estadoCivil', value)} error={!!fieldErrors.estadoCivil} /></Grid>
-          <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Ocupacion" value={form.ocupacion} onChange={(value) => updateField('ocupacion', value)} error={!!fieldErrors.ocupacion} /></Grid>
+          <Grid size={{ xs: 12, md: 1 }}><FormInput compact requiredHint label="Tipo ID" select value={form.tipoDocumento} onChange={(value) => updateField('tipoDocumento', value)} options={documentTypeOptions} error={!!fieldErrors.tipoDocumento} excelRef="C: Tipo_documento_identidad_victima" devMode={devMode} /></Grid>
+          <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Numero de documento" value={form.documento} onChange={(value) => updateField('documento', value)} error={!!fieldErrors.documento} maxLength={20} alphanumeric excelRef="D: Numero_documento_identidad_victima" devMode={devMode} /></Grid>
+          <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Primer Nombre" lettersOnly maxLength={30} value={form.primerNombre} onChange={(value) => updateField('primerNombre', value)} error={!!fieldErrors.primerNombre} excelRef="F: Primer_nombre_victima" devMode={devMode} /></Grid>
+          <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Segundo Nombre" lettersOnly maxLength={30} value={form.segundoNombre} onChange={(value) => updateField('segundoNombre', value)} error={!!fieldErrors.segundoNombre} excelRef="G: Segundo_nombre_victima" devMode={devMode} /></Grid>
+          <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Primer Apellido" lettersOnly maxLength={30} value={form.primerApellido} onChange={(value) => updateField('primerApellido', value)} error={!!fieldErrors.primerApellido} excelRef="H: Primer_apellido_victima" devMode={devMode} /></Grid>
+          <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Segundo Apellido" lettersOnly maxLength={30} value={form.segundoApellido} onChange={(value) => updateField('segundoApellido', value)} error={!!fieldErrors.segundoApellido} excelRef="I: Segundo_apellido_victima" devMode={devMode} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Tipo Población" select value={form.tipoPoblacion} onChange={(value) => updateField('tipoPoblacion', value)} options={poblacionOptions} excelRef="E: Tipo_de_poblacion_especial" devMode={devMode} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Estado Civil" value={form.estadoCivil} onChange={(value) => updateField('estadoCivil', value)} error={!!fieldErrors.estadoCivil} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Ocupacion" value={form.ocupacion} onChange={(value) => updateField('ocupacion', value)} error={!!fieldErrors.ocupacion} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Sexo" select value={form.sexo} onChange={(value) => updateField('sexo', value)} options={sexoOptions} error={!!fieldErrors.sexo} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Fecha de Nacimiento" type="date" value={form.fechaNacimiento} onChange={(value) => updateField('fechaNacimiento', value)} error={!!fieldErrors.fechaNacimiento} /></Grid>
-          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Edad" value={form.edad} onChange={(value) => updateField('edad', value)} error={!!fieldErrors.edad} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Edad" numeric maxLength={3} value={form.edad} onChange={(value) => updateField('edad', value)} error={!!fieldErrors.edad} /></Grid>
         </Grid>
 
         <SectionTitle compact>Datos de contacto</SectionTitle>
@@ -1035,9 +1066,13 @@ function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateF
                 compact
                 requiredHint
                 label="Celular Paciente"
+                numeric
+                maxLength={10}
                 value={form.celular}
                 onChange={(value) => updateField('celular', value)}
                 error={!!fieldErrors.celular}
+                excelRef="L: Telefono_victima"
+                devMode={devMode}
             />
           </Grid>
 
@@ -1045,9 +1080,12 @@ function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateF
             <FormInput
                 compact
                 label="Telefono Paciente"
+                numeric
+                maxLength={10}
                 value={form.telefono}
                 onChange={(value) => updateField('telefono', value)}
                 error={!!fieldErrors.telefono}
+                devMode={devMode}
             />
           </Grid>
 
@@ -1075,6 +1113,8 @@ function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateF
             <FormInput
                 compact
                 label="Numero Para Avisar"
+                numeric
+                maxLength={10}
                 value={form.numeroParaAvisar}
                 onChange={(value) => updateField('numeroParaAvisar', value)}
                 error={!!fieldErrors.numeroParaAvisar}
@@ -1085,6 +1125,8 @@ function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateF
             <FormInput
                 compact
                 label="Numero Para Avisar 2"
+                numeric
+                maxLength={10}
                 value={form.numeroParaAvisar2}
                 onChange={(value) => updateField('numeroParaAvisar2', value)}
                 error={!!fieldErrors.numeroParaAvisar2}
@@ -1098,6 +1140,8 @@ function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateF
             <FormInput
                 compact
                 label="Nombre Acompanante"
+                lettersOnly
+                maxLength={60}
                 value={form.acompanante}
                 onChange={(value) => updateField('acompanante', value)}
                 error={!!fieldErrors.acompanante}
@@ -1108,6 +1152,8 @@ function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateF
             <FormInput
                 compact
                 label="Celular Acompanante"
+                numeric
+                maxLength={10}
                 value={form.celularAcompanante}
                 onChange={(value) => updateField('celularAcompanante', value)}
                 error={!!fieldErrors.celularAcompanante}
@@ -1117,7 +1163,8 @@ function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateF
 
         <SectionTitle compact>Ubicacion</SectionTitle>
         <Grid container spacing={0.75}>
-          <Grid size={{ xs: 12, md: 4 }}><FormInput compact requiredHint label="Direccion de Residencia" value={form.direccion} onChange={(value) => updateField('direccion', value)} error={!!fieldErrors.direccion} /></Grid>
+          <Grid size={{ xs: 12, md: 4 }}><FormInput compact requiredHint label="Direccion de Residencia" address maxLength={120} value={form.direccion} onChange={(value) => updateField('direccion', value)} error={!!fieldErrors.direccion} excelRef="J: Direccion_residencia_victima" devMode={devMode} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Código municipio residencia" select value={form.codigoMunicipioResidencia} onChange={(value) => updateField('codigoMunicipioResidencia', value)} options={municipioOptions} excelRef="K: Codigo_municipio_residencia_victima" devMode={devMode} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Zona Paciente" select value={form.zonaPaciente} onChange={(value) => updateField('zonaPaciente', value)} options={zonaOptions} error={!!fieldErrors.zonaPaciente} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Departamento" value={form.departamento} onChange={(value) => updateField('departamento', value)} error={!!fieldErrors.departamento} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Ciudad" value={form.ciudad} onChange={(value) => updateField('ciudad', value)} error={!!fieldErrors.ciudad} /></Grid>
@@ -1134,37 +1181,8 @@ function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateF
   )
 }
 
-function OwnerTab({ form, updateField, fieldErrors }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean> }) {
-  const isPropietarioRequired =
-    form.naturalezaEvento === '01' &&
-    estadoAseguramientoObligaPropietario.includes(form.estadoAseguramiento as typeof estadoAseguramientoObligaPropietario[number])
-
-  return (
-      <Stack spacing={0.75}>
-        <SectionTitle compact>Datos del propietario del vehículo</SectionTitle>
-        {isPropietarioRequired && (
-            <Alert severity="info" sx={{ py: 0, fontSize: 11.5 }}>
-              Los campos marcados con * son obligatorios porque la naturaleza del evento es "Accidente de tránsito" y el estado de aseguramiento lo requiere.
-            </Alert>
-        )}
-        <Grid container spacing={0.75}>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <FormInput
-                compact
-                requiredHint={isPropietarioRequired}
-                label="Primer nombre / Razón social"
-                value={form.primerNombrePropietario}
-                onChange={(value) => updateField('primerNombrePropietario', value)}
-                error={!!fieldErrors.primerNombrePropietario}
-                maxLength={30}
-            />
-          </Grid>
-        </Grid>
-      </Stack>
-  )
-}
-
-function InsuranceTab({ form, updateField, fieldErrors }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean> }) {
+function InsuranceTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean>; devMode?: boolean }) {
+  void devMode
   return (
       <Grid container spacing={0.75}>
         <Grid size={{ xs: 12, md: 6 }}>
@@ -1200,7 +1218,8 @@ function InsuranceTab({ form, updateField, fieldErrors }: { form: AphForm; updat
   )
 }
 
-function CauseTab({ form, updateField, fieldErrors }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean> }) {
+function CauseTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean>; devMode?: boolean }) {
+  void devMode
   return (
       <Stack spacing={0.75}>
         <SectionTitle compact sx={{ color: fieldErrors.causaExterna ? '#d32f2f' : undefined }}>Motivo del llamado de emergencia *</SectionTitle>
@@ -1224,12 +1243,14 @@ function PhysicalExamTab({
                            fieldErrors,
                            selectedInjuries,
                            onToggleInjury,
+                           devMode,
                          }: {
   form: AphForm
   updateField: (field: keyof AphForm, value: string) => void
   fieldErrors: Record<string, boolean>
   selectedInjuries: string[]
   onToggleInjury: (area: string) => void
+  devMode?: boolean
 }) {
   return (
       <Stack spacing={0.75}>
@@ -1283,7 +1304,7 @@ function PhysicalExamTab({
 
           <Grid size={{ xs: 12, md: 7 }}>
             <Stack spacing={0.75}>
-              <FormInput compact label="Describa los hallazgos" multiline rows={4} value={form.hallazgos} onChange={(value) => updateField('hallazgos', value)} error={!!fieldErrors.hallazgos} />
+              <FormInput compact requiredHint label="Descripción corta de lo ocurrido" multiline rows={4} maxLength={1000} value={form.hallazgos} onChange={(value) => updateField('hallazgos', value)} error={!!fieldErrors.hallazgos} helperText={fieldErrors.hallazgos ? 'Mínimo 100 caracteres' : undefined} excelRef="T: Descripcion_corta_de_lo_ocurrido_en_el_evento" devMode={devMode} />
               <FormInput compact label="Diagnosticos CIE 10" value={form.diagnosticos} onChange={(value) => updateField('diagnosticos', value)} error={!!fieldErrors.diagnosticos} />
             </Stack>
           </Grid>
@@ -1292,7 +1313,8 @@ function PhysicalExamTab({
   )
 }
 
-function ProcedureTab({ selectedProcedures, onToggleProcedure, fieldErrors }: { selectedProcedures: string[]; onToggleProcedure: (procedure: string) => void; fieldErrors: Record<string, boolean> }) {
+function ProcedureTab({ selectedProcedures, onToggleProcedure, fieldErrors, devMode }: { selectedProcedures: string[]; onToggleProcedure: (procedure: string) => void; fieldErrors: Record<string, boolean>; devMode?: boolean }) {
+  void devMode
   return (
       <Stack spacing={0.75}>
         <SectionTitle compact sx={{ color: fieldErrors.procedimientos ? '#d32f2f' : undefined }}>Procedimientos realizados *</SectionTitle>
@@ -1310,7 +1332,8 @@ function ProcedureTab({ selectedProcedures, onToggleProcedure, fieldErrors }: { 
   )
 }
 
-function MaterialsTab({ form, updateField, fieldErrors }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean> }) {
+function MaterialsTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean>; devMode?: boolean }) {
+  void devMode
   return (
       <Stack spacing={0.75}>
         <SectionTitle compact>Materiales utilizados</SectionTitle>
@@ -1319,7 +1342,8 @@ function MaterialsTab({ form, updateField, fieldErrors }: { form: AphForm; updat
   )
 }
 
-function CrewTab({ form, updateField, fieldErrors }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean> }) {
+function CrewTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean>; devMode?: boolean }) {
+  void devMode
   return (
       <Stack spacing={0.75}>
         <Grid container spacing={0.75}>
@@ -1351,6 +1375,81 @@ function CrewTab({ form, updateField, fieldErrors }: { form: AphForm; updateFiel
   )
 }
 
+function VehicleTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean>; devMode?: boolean }) {
+  const showPlaca = form.estadoAseguramiento === '2' || form.estadoAseguramiento === '4' || form.estadoAseguramiento === '6' || form.estadoAseguramiento === '7'
+  const showCodigoAseguradora = form.estadoAseguramiento === '4' || form.estadoAseguramiento === '6'
+
+  useEffect(() => {
+    if (form.estadoAseguramiento === '3' || form.estadoAseguramiento === '8') {
+      if (form.placaVehiculo) updateField('placaVehiculo', '')
+    }
+    if (!showCodigoAseguradora && form.codigoAseguradora) {
+      updateField('codigoAseguradora', '')
+    }
+    if (!showCodigoAseguradora && form.numeroPolizaSoat) {
+      updateField('numeroPolizaSoat', '')
+    }
+    if (!showCodigoAseguradora && form.fechaInicioVigencia) {
+      updateField('fechaInicioVigencia', '')
+    }
+    if (!showCodigoAseguradora && form.fechaFinVigencia) {
+      updateField('fechaFinVigencia', '')
+    }
+  }, [form.estadoAseguramiento, form.placaVehiculo, form.codigoAseguradora, form.numeroPolizaSoat, form.fechaInicioVigencia, form.fechaFinVigencia, showCodigoAseguradora])
+
+  return (
+      <Stack spacing={0.75}>
+        <SectionTitle compact>Datos del vehículo</SectionTitle>
+        <Grid container spacing={0.75}>
+          {form.naturalezaEvento === '01' && (
+              <>
+                <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Estado de aseguramiento" select value={form.estadoAseguramiento} onChange={(value) => updateField('estadoAseguramiento', value)} options={aseguramientoOptions} excelRef="U: Estado_de_aseguramiento" devMode={devMode} /></Grid>
+                {showPlaca && (
+                    <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Placa Vehículo" alphanumeric maxLength={10} value={form.placaVehiculo} onChange={(value) => updateField('placaVehiculo', value)} error={!!fieldErrors.placaVehiculo} excelRef="V: Placa_vehiculo" devMode={devMode} /></Grid>
+                )}
+                <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Tipo de Vehículo" select value={form.tipoVehiculo} onChange={(value) => updateField('tipoVehiculo', value)} options={tipoVehiculoOptions} excelRef="W: Tipo_de_Vehiculo" devMode={devMode} /></Grid>
+                {showCodigoAseguradora && (
+                    <>
+                      <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Código de la aseguradora" alphanumeric maxLength={6} value={form.codigoAseguradora} onChange={(value) => updateField('codigoAseguradora', value)} excelRef="X: Codigo_de_la_aseguradora" devMode={devMode} /></Grid>
+                      <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Número de póliza SOAT" alphanumeric maxLength={20} value={form.numeroPolizaSoat} onChange={(value) => updateField('numeroPolizaSoat', value)} excelRef="Y: Numero_de_poliza_SOAT" devMode={devMode} /></Grid>
+                      <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Inicio vigencia SOAT" type="date" value={form.fechaInicioVigencia} onChange={(value) => updateField('fechaInicioVigencia', value)} excelRef="Z: Fecha_de_inicio_de_vigencia_de_la_poliza" devMode={devMode} /></Grid>
+                      <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Fin vigencia SOAT" type="date" value={form.fechaFinVigencia} onChange={(value) => updateField('fechaFinVigencia', value)} excelRef="AA: Fecha_final_de_vigencia_de_la_poliza" devMode={devMode} /></Grid>
+                    </>
+                )}
+                <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Número de radicado SIRAS" alphanumeric maxLength={20} value={form.numeroRadicadoSiras} onChange={(value) => updateField('numeroRadicadoSiras', value)} excelRef="AB: Numero_de_radicado_SIRAS" devMode={devMode} /></Grid>
+              </>
+          )}
+        </Grid>
+      </Stack>
+  )
+}
+
+function OwnerTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean>; devMode?: boolean }) {
+  const showOwnerDocs = form.naturalezaEvento === '01' && (form.estadoAseguramiento === '2' || form.estadoAseguramiento === '4' || form.estadoAseguramiento === '6' || form.estadoAseguramiento === '8')
+
+  useEffect(() => {
+    if (!showOwnerDocs) {
+      if (form.tipoDocumentoPropietario) updateField('tipoDocumentoPropietario', '')
+      if (form.numeroDocumentoPropietario) updateField('numeroDocumentoPropietario', '')
+    }
+  }, [form.estadoAseguramiento, form.naturalezaEvento, form.tipoDocumentoPropietario, form.numeroDocumentoPropietario, showOwnerDocs])
+
+  return (
+      <Stack spacing={0.75}>
+        <SectionTitle compact>Datos del propietario</SectionTitle>
+        <Grid container spacing={0.75}>
+          {showOwnerDocs && (
+              <>
+                <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Tipo doc. propietario" select value={form.tipoDocumentoPropietario} onChange={(value) => updateField('tipoDocumentoPropietario', value)} options={tipoDocumentoPropietarioOptions} excelRef="AD: Tipo_de_documento_de_identidad_del_propietario" devMode={devMode} /></Grid>
+                <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Número doc. propietario" alphanumeric maxLength={20} value={form.numeroDocumentoPropietario} onChange={(value) => updateField('numeroDocumentoPropietario', value)} excelRef="AE: Numero_de_documento_de_identidad_del_propietario" devMode={devMode} /></Grid>
+                <Grid size={{ xs: 12, md: 4 }}><FormInput compact requiredHint label="Primer nombre / Razón social" maxLength={30} value={form.primerNombrePropietario} onChange={(value) => updateField('primerNombrePropietario', value)} error={!!fieldErrors.primerNombrePropietario} excelRef="AF: Primer_nombre_del_propietario_o_razon_social" devMode={devMode} /></Grid>
+              </>
+          )}
+        </Grid>
+      </Stack>
+  )
+}
+
 function FormInput({
                      label,
                      value,
@@ -1364,44 +1463,75 @@ function FormInput({
                      compact = false,
                      requiredHint = false,
                      maxLength,
+                     alphanumeric = false,
+                     lettersOnly = false,
+                     address = false,
+                     numeric = false,
+                     excelRef,
+                     devMode = false,
+                     helperText,
                    }: {
   label: string
   value: string
   onChange: (value: string) => void
   type?: string
   select?: boolean
-  options?: readonly string[]
+  options?: readonly (string | { value: string; label: string })[]
   multiline?: boolean
   rows?: number
   error?: boolean
   compact?: boolean
   requiredHint?: boolean
   maxLength?: number
+  alphanumeric?: boolean
+  lettersOnly?: boolean
+  address?: boolean
+  numeric?: boolean
+  excelRef?: string
+  devMode?: boolean
+  helperText?: string
 }) {
+  const handleChange = (raw: string) => {
+    let val = raw
+    if (alphanumeric) val = val.replace(/[^a-zA-Z0-9]/g, '')
+    if (lettersOnly) val = val.replace(/[^a-zA-ZáéíóúüñÁÉÍÓÚÜÑ\s-]/g, '')
+    if (address) val = val.replace(/[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s#\-.()/]/g, '')
+    if (numeric) val = val.replace(/\D/g, '')
+    if (maxLength !== undefined && val.length > maxLength) val = val.slice(0, maxLength)
+    onChange(val)
+  }
+
   const slotProps = (() => {
     const props: Record<string, unknown> = {}
     if (type === 'date' || type === 'time') {
       props.inputLabel = { shrink: true }
     }
-    if (maxLength) {
+    if (maxLength !== undefined) {
       props.htmlInput = { maxLength }
     }
     return Object.keys(props).length > 0 ? props : undefined
   })()
+
+  const metadata = [maxLength !== undefined ? `${value.length}/${maxLength}` : undefined, devMode && excelRef ? excelRef : undefined]
+    .filter(Boolean)
+    .join(' • ')
+  const resolvedHelperText = error
+    ? [helperText || 'Campo obligatorio', metadata || undefined].filter(Boolean).join(' • ')
+    : helperText || metadata || undefined
 
   return (
       <TextField
           fullWidth
           label={requiredHint ? `${label} *` : label}
           value={value}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => handleChange(event.target.value)}
           type={type}
           select={select}
           multiline={multiline}
           rows={rows}
           error={error}
           size="small"
-          helperText={error ? 'Campo obligatorio' : maxLength ? `${value.length}/${maxLength}` : undefined}
+          helperText={resolvedHelperText}
           slotProps={slotProps}
           sx={{
             '& .MuiInputLabel-root': {
@@ -1442,11 +1572,15 @@ function FormInput({
             },
           }}
       >
-        {options.map((option) => (
-            <MenuItem key={option} value={option} sx={{ fontSize: 12 }}>
-              {option}
+        {options.map((option) => {
+          const val = typeof option === 'string' ? option : option.value
+          const lbl = typeof option === 'string' ? option : option.label
+          return (
+            <MenuItem key={val} value={val} sx={{ fontSize: 12, whiteSpace: 'normal' }}>
+              {typeof option === 'string' ? option : `${val} - ${lbl}`}
             </MenuItem>
-        ))}
+          )
+        })}
       </TextField>
   )
 }
@@ -1656,7 +1790,7 @@ function PdfPreview({ form, injuries, procedures }: { form: AphForm; injuries: s
 
           <PreviewBar>DATOS DEL PACIENTE</PreviewBar>
           <PreviewTable rows={[
-            ['Tipo ID', form.tipoDocumento, 'Identificacion', form.documento],
+            ['Tipo ID', form.tipoDocumento || 'CC', 'Identificacion', form.documento],
             ['Nombres y Apellidos', fullNameValue, 'Sexo', form.sexo],
             ['Codigo CUPS', form.codigo, 'Prioridad', form.prioridad],
             ['Traslado', form.traslado, 'Tipo', form.tipoTraslado],

@@ -1,5 +1,5 @@
 ﻿import { PDFDocument, PDFImage, PDFPage, PDFFont, rgb, StandardFonts } from 'pdf-lib'
-import type { AphForm, AphPayload } from '../types/aph'
+import type { AphPayload } from '../types/aph'
 
 const PAGE_WIDTH = 595.28
 const PAGE_HEIGHT = 841.89
@@ -18,7 +18,7 @@ const VALUE_FONT_SIZE = 5.4
 const SECTION_FONT_SIZE = 6.6
 
 type AphFull = AphPayload
-type AphData = AphForm
+type AphData = AphPayload
 
 
 interface Ctx {
@@ -172,7 +172,7 @@ function drawSection(ctx: Ctx, y: number, title: string): number {
 
 function drawPatientData(ctx: Ctx, y: number, data: AphData): number {
   y = tableRow(ctx, y, [
-    cell('Tipo ID', inferType(data.documento), 1),
+    cell('Tipo ID', nvl(data.tipoDocumento), 1),
     cell('No. de IdentificaciÃ³n', nvl(data.documento), 2),
     cell('Nombres y Apellidos', fullName(data), 4),
     cell('Sexo', nvl(data.sexo), 1),
@@ -711,20 +711,6 @@ function joinPersonDoc(name: string, doc: string): string {
 
 function fullName(data: AphData): string {
   return [nvl(data.primerNombre), nvl(data.primerApellido)].filter(Boolean).join(' ')
-}
-
-function inferType(doc: string): string {
-  const length = nvl(doc).length
-
-  if (length >= 10) {
-    return 'CC'
-  }
-
-  if (length >= 6) {
-    return 'CE'
-  }
-
-  return 'TI'
 }
 
 function truncate(value: string, max: number): string {

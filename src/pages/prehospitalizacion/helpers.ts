@@ -10,7 +10,7 @@ export function getPatientName(
     .join(' ')
 }
 
-export function getDocumentType(_document?: string, tipoDocumento?: string): string {
+export function getDocumentType(tipoDocumento?: string): string {
   return tipoDocumento || ''
 }
 

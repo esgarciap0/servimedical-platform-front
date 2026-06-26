@@ -18,10 +18,22 @@ export type AphForm = {
   prioridad: string
   fechaAccidente: string
   horaAccidente: string
-  lugarOcurrencia: string
   naturalezaEvento: string
+  descripcionOtroEvento: string
+  condicionVictima: string
   estadoAseguramiento: string
+  placaVehiculo: string
+  tipoVehiculo: string
+  codigoAseguradora: string
+  numeroPolizaSoat: string
+  fechaInicioVigencia: string
+  fechaFinVigencia: string
+  numeroRadicadoSiras: string
+  tipoDocumentoPropietario: string
+  numeroDocumentoPropietario: string
+  lugarOcurrencia: string
   zonaOrigen: string
+  codigoMunicipioOcurrencia: string
   departamentoOrigen: string
   municipioOrigen: string
   documento: string
@@ -37,6 +49,7 @@ export type AphForm = {
   edad: string
   celular: string
   telefono: string
+  tipoPoblacion: string
   acompanante: string
   celularAcompanante: string
   avisarA: string
@@ -44,6 +57,7 @@ export type AphForm = {
   numeroParaAvisar: string
   numeroParaAvisar2: string
   direccion: string
+  codigoMunicipioResidencia: string
   zonaPaciente: string
   departamento: string
   ciudad: string
