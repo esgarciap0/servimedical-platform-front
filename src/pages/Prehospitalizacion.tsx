@@ -57,6 +57,7 @@ import {
   stickyActionHeaderSx,
   tableColumns,
   tabs,
+  tipoDocumentoOptions,
   tipoTrasladoOptions,
   trasladoOptions,
   zonaOptions,
@@ -618,7 +619,7 @@ export function Prehospitalizacion() {
                               <TableCell>{row.createdAt?.split('T')[0] || ''}</TableCell>
                               <TableCell>{row.movil || ''}</TableCell>
                               <TableCell>{row.aseguradora || ''}</TableCell>
-                              <TableCell>{getDocumentType(row.documento)}</TableCell>
+                              <TableCell>{getDocumentType(row.documento, row.tipoDocumento)}</TableCell>
                               <TableCell>{row.documento || ''}</TableCell>
 
                               <TableCell title={getPatientName(row)}>
@@ -935,7 +936,7 @@ function AphMobileCard({
                 {getPatientName(row) || 'Paciente sin nombre'}
               </Typography>
               <Typography sx={{ color: 'text.secondary', fontSize: 12 }}>
-                {getDocumentType(row.documento)} {row.documento || 'Sin documento'}
+                {getDocumentType(row.documento, row.tipoDocumento)} {row.documento || 'Sin documento'}
               </Typography>
             </Box>
             <Chip label={row.codigo || `#${row.id}`} size="small" sx={{ fontWeight: 900, bgcolor: '#e0f2fe', color: '#075985' }} />
@@ -998,6 +999,7 @@ function PatientTab({ form, updateField, fieldErrors }: { form: AphForm; updateF
 
         <SectionTitle compact>Datos del paciente o victima</SectionTitle>
         <Grid container spacing={0.75}>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Tipo documento" select value={form.tipoDocumento} onChange={(value) => updateField('tipoDocumento', value)} options={tipoDocumentoOptions} error={!!fieldErrors.tipoDocumento} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Numero de documento" value={form.documento} onChange={(value) => updateField('documento', value)} error={!!fieldErrors.documento} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Primer Apellido" value={form.primerApellido} onChange={(value) => updateField('primerApellido', value)} error={!!fieldErrors.primerApellido} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Segundo Apellido" value={form.segundoApellido} onChange={(value) => updateField('segundoApellido', value)} error={!!fieldErrors.segundoApellido} /></Grid>
@@ -1595,7 +1597,7 @@ function PdfPreview({ form, injuries, procedures }: { form: AphForm; injuries: s
 
           <PreviewBar>DATOS DEL PACIENTE</PreviewBar>
           <PreviewTable rows={[
-            ['Tipo ID', 'CC', 'Identificacion', form.documento],
+            ['Tipo ID', form.tipoDocumento, 'Identificacion', form.documento],
             ['Nombres y Apellidos', fullNameValue, 'Sexo', form.sexo],
             ['Codigo CUPS', form.codigo, 'Prioridad', form.prioridad],
             ['Traslado', form.traslado, 'Tipo', form.tipoTraslado],

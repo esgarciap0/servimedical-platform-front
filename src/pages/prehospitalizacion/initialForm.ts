@@ -14,6 +14,7 @@ export const initialForm: AphForm = {
   departamentoOrigen: '',
   municipioOrigen: '',
   documento: '',
+  tipoDocumento: 'CC',
   primerApellido: '',
   segundoApellido: '',
   primerNombre: '',

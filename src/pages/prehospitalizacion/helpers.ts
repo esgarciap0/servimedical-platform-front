@@ -10,12 +10,8 @@ export function getPatientName(
     .join(' ')
 }
 
-export function getDocumentType(document?: string): string {
-  if (!document) return ''
-  if (document.length === 10) return 'CC'
-  if (document.length === 11) return 'TI'
-  if (document.length >= 6) return 'CE'
-  return ''
+export function getDocumentType(_document?: string, tipoDocumento?: string): string {
+  return tipoDocumento || ''
 }
 
 export function getSortValue(row: AphResponse, key: AphSortKey): string | number {

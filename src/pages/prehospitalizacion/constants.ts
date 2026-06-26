@@ -30,6 +30,14 @@ export const sexoOptions = ['M', 'F'] as const
 export const planBeneficiosOptions = ['SOAT', 'ARL', 'EPS', 'PARTICULAR'] as const
 export const ambulanceOptions = ['001', '002', '003'] as const
 
+/**
+ * Tipos de documento soportados por el backend.
+ * CC: Cédula de ciudadanía, TI: Tarjeta de identidad, CE: Cédula de extranjería,
+ * RC: Registro civil, PA: Pasaporte, MS: Menor sin identificar,
+ * AS: Adulto sin identificar, NU: NUIP.
+ */
+export const tipoDocumentoOptions = ['CC', 'TI', 'CE', 'RC', 'PA', 'MS', 'AS', 'NU'] as const
+
 export const procedures = [
   'Oxigenacion',
   'Hemoplastia',
@@ -67,6 +75,7 @@ export const requiredFieldsByTab: Record<number, (keyof AphForm)[]> = {
     'departamentoOrigen',
     'municipioOrigen',
     'documento',
+    'tipoDocumento',
     'primerApellido',
     'segundoApellido',
     'primerNombre',

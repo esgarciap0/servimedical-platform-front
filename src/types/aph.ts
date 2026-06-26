@@ -23,6 +23,7 @@ export type AphForm = {
   departamentoOrigen: string
   municipioOrigen: string
   documento: string
+  tipoDocumento: string
   primerApellido: string
   segundoApellido: string
   primerNombre: string
