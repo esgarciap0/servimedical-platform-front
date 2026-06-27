@@ -27,6 +27,10 @@ export function PictureAsPdfIcon(props: SvgIconProps) {
     return <SvgIcon {...props}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm-1 7V3.5L18.5 9H13ZM7 13h2.2c1.2 0 2 .8 2 1.9s-.8 1.9-2 1.9H8.4V19H7v-6Zm1.4 2.6h.7c.5 0 .8-.3.8-.7s-.3-.7-.8-.7h-.7v1.4Zm3.5-2.6h2c1.8 0 2.8 1.1 2.8 3s-1 3-2.8 3h-2v-6Zm1.4 4.7h.5c1 0 1.5-.6 1.5-1.7s-.5-1.7-1.5-1.7h-.5v3.4Zm4-4.7H21v1.3h-2.3v1.1h2v1.2h-2V19h-1.4v-6Z" /></SvgIcon>
 }
 
+export function TableViewIcon(props: SvgIconProps) {
+    return <SvgIcon {...props}><path d="M19 7H9C7.9 7 7 7.9 7 9v10c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2Zm0 4h-4v2h4v2h-4v2h4v2H9V9h10v2ZM5 5v12H3V5c0-1.1.9-2 2-2h12v2H5Zm8 6h-4v2h4v-2Zm0 4h-4v2h4v-2Z" /></SvgIcon>
+}
+
 export function DashboardIcon(props: SvgIconProps) {
     return <SvgIcon {...props}><path d="M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z" /></SvgIcon>
 }
@@ -69,4 +73,20 @@ export function AnalyticsIcon(props: SvgIconProps) {
 
 export function AdminPanelSettingsIcon(props: SvgIconProps) {
     return <SvgIcon {...props}><path d="M12 1 4 4v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V4l-8-3Zm3.7 8.7-4.2 4.2-2.2-2.2 1.4-1.4.8.8 2.8-2.8 1.4 1.4Z" /></SvgIcon>
+}
+
+export function SearchIcon(props: SvgIconProps) {
+    return <SvgIcon {...props}><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></SvgIcon>
+}
+
+export function FileDownloadIcon(props: SvgIconProps) {
+    return <SvgIcon {...props}><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" /></SvgIcon>
+}
+
+export function FilterListIcon(props: SvgIconProps) {
+    return <SvgIcon {...props}><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" /></SvgIcon>
+}
+
+export function RefreshIcon(props: SvgIconProps) {
+    return <SvgIcon {...props}><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" /></SvgIcon>
 }

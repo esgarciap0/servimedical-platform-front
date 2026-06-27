@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { toPng } from 'html-to-image'
-import { AddBoxIcon, CloseIcon, EditIcon, PageviewIcon, PictureAsPdfIcon } from '../icons/AppIcons'
+import { AddBoxIcon, CloseIcon, EditIcon, FileDownloadIcon, PageviewIcon, PictureAsPdfIcon, RefreshIcon, SearchIcon, TableViewIcon } from '../icons/AppIcons'
 import {
   Alert,
   Box,
@@ -17,6 +17,7 @@ import {
   FormControlLabel,
   Grid,
   IconButton,
+  InputAdornment,
   LinearProgress,
   Link,
   MenuItem,
@@ -26,13 +27,6 @@ import {
   Stack,
   Switch,
   Tab,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
   Tabs,
   TextField,
   Tooltip,
@@ -40,10 +34,12 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
+import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid'
 import Body, { type ExtendedBodyPart } from 'react-muscle-highlighter'
 import logo from '../assets/app-256.png'
 import { aphService } from '../services/aphService'
 import { ApiError } from '../services/api'
+import { generateFurExcel } from '../services/furGenerator'
 import type { AphForm, AphResponse, AphSortKey, SortOrder } from '../types/aph'
 import {
   actionButtonSx,
@@ -61,9 +57,6 @@ import {
   procedures,
   requiredFieldsByTab,
   sexoOptions,
-  stickyActionBodySx,
-  stickyActionHeaderSx,
-  tableColumns,
   tabs,
   tipoDocumentoConductorOptions,
   tipoDocumentoProfesionalRecibeOptions,
@@ -137,7 +130,82 @@ export function Prehospitalizacion() {
     })
   }, [filteredRows, sortBy, sortOrder])
 
+  const dataGridColumns: GridColDef[] = [
+    { field: 'codigo', headerName: 'N° ID', width: 80, valueGetter: (_value, row) => row.codigo || row.id },
+    { field: 'createdAt', headerName: 'Fecha', width: 100, valueGetter: (value) => value?.split('T')[0] || '' },
+    { field: 'movil', headerName: 'Móvil', width: 90 },
+    { field: 'aseguradora', headerName: 'Aseguradora', width: 130 },
+    { field: 'tipoDocumento', headerName: 'Tipo Doc', width: 90 },
+    { field: 'documento', headerName: 'N° Doc', width: 110 },
+    {
+      field: 'paciente',
+      headerName: 'Paciente',
+      width: 160,
+      valueGetter: (_value, row) => getPatientName(row),
+    },
+    { field: 'lugarOcurrencia', headerName: 'Origen', width: 130 },
+    { field: 'transportadoA', headerName: 'Destino', width: 130 },
+    { field: 'paramedico', headerName: 'Paramédico', width: 120 },
+    { field: 'conductor', headerName: 'Conductor', width: 120 },
+    {
+      field: 'acciones',
+      headerName: 'Acciones',
+      width: 180,
+      sortable: false,
+      filterable: false,
+      pinnable: false,
+      hideable: false,
+      renderCell: (params: GridRenderCellParams) => (
+          <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <Tooltip title="Ver PDF">
+              <IconButton
+                  size="small"
+                  onClick={() => handleViewPdf(params.row.id)}
+                  sx={{ ...actionButtonSx, bgcolor: '#0d6efd', color: 'white', '&:hover': { bgcolor: '#0b5ed7' } }}
+              >
+                <PageviewIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Editar">
+              <IconButton
+                  size="small"
+                  onClick={() => handleEdit(params.row.id)}
+                  sx={{ ...actionButtonSx, bgcolor: '#f59e0b', color: 'white', '&:hover': { bgcolor: '#d97706' } }}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Descargar PDF">
+              <IconButton
+                  size="small"
+                  onClick={() => handleDownloadPdf(params.row.id)}
+                  sx={{ ...actionButtonSx, color: '#dc3545', bgcolor: '#fff1f2', '&:hover': { bgcolor: '#ffe4e6' } }}
+              >
+                <PictureAsPdfIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Generar FUR">
+              <IconButton
+                  size="small"
+                  onClick={() => handleGenerateFur(params.row.id)}
+                  sx={{ ...actionButtonSx, color: '#16a34a', bgcolor: '#f0fdf4', '&:hover': { bgcolor: '#dcfce7' } }}
+              >
+                <TableViewIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+      ),
+    },
+  ]
+
   const progress = Math.round(((tab + 1) / tabs.length) * 100)
+
+  const fetchRows = () => {
+    aphService
+        .list()
+        .then(setRows)
+        .catch(() => setRows([]))
+  }
 
   useEffect(() => {
     const controller = new AbortController()
@@ -523,6 +591,15 @@ export function Prehospitalizacion() {
     }
   }
 
+  const handleGenerateFur = async (id: number) => {
+    try {
+      const aph = await aphService.getById(id)
+      generateFurExcel(aph)
+    } catch {
+      setSnackbar({ message: 'Error al generar FUR', fields: [], severity: 'error' })
+    }
+  }
+
   const closeDialog = () => {
     setOpen(false)
     setEditId(null)
@@ -541,16 +618,6 @@ export function Prehospitalizacion() {
     setOpen(true)
   }
 
-  const handleSort = (key: AphSortKey) => {
-    if (sortBy === key) {
-      setSortOrder((current) => (current === 'asc' ? 'desc' : 'asc'))
-      return
-    }
-
-    setSortBy(key)
-    setSortOrder(key === 'createdAt' ? 'desc' : 'asc')
-  }
-
   return (
       <Stack spacing={{ xs: 1.25, md: 1.5 }}>
         <Breadcrumbs aria-label="breadcrumb">
@@ -563,99 +630,145 @@ export function Prehospitalizacion() {
         <Card
             sx={{
               overflow: 'hidden',
-              borderRadius: 2.5,
-              maxWidth: 1180,
+              borderRadius: 3,
+              maxWidth: 1280,
               width: '100%',
               mx: 'auto',
+              boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
             }}
         >
+          {/* Header */}
           <Box
               sx={{
-                px: { xs: 1.25, md: 1.5 },
-                py: { xs: 0.9, md: 1 },
+                px: { xs: 2, md: 3 },
+                py: { xs: 1.5, md: 2 },
                 color: 'white',
                 background: 'linear-gradient(135deg, #0f766e 0%, #075db8 100%)',
               }}
           >
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ justifyContent: 'space-between' }}>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ justifyContent: 'space-between', alignItems: { md: 'center' } }}>
               <Box>
-                <Typography sx={{ fontWeight: 900, fontSize: { xs: 18, md: 19 }, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
-                  Gestion APH
+                <Typography sx={{ fontWeight: 900, fontSize: { xs: 20, md: 22 }, letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+                  Gestión APH
                 </Typography>
-                <Typography sx={{ fontSize: { xs: 12, md: 12.5 }, opacity: 0.88 }}>
-                  Registro, consulta y generacion profesional del formato de atencion prehospitalaria.
+                <Typography sx={{ fontSize: { xs: 12.5, md: 13 }, opacity: 0.85, mt: 0.25 }}>
+                  Registro, consulta y generación profesional del formato de atención prehospitalaria.
                 </Typography>
               </Box>
 
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                <Chip label={`${rows.length} registros`} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.18)', color: 'white', fontWeight: 800 }} />
-                <Chip label="PDF APH" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.18)', color: 'white', fontWeight: 800 }} />
+                <Chip
+                    label={`${rows.length} registros`}
+                    size="small"
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      fontWeight: 700,
+                      fontSize: 12,
+                      backdropFilter: 'blur(4px)',
+                      '& .MuiChip-label': { px: 1.5 },
+                    }}
+                />
               </Stack>
             </Stack>
           </Box>
 
-          <CardContent sx={{ p: { xs: 1, md: 1.15 } }}>
-            <Stack spacing={0.75}>
-              <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', md: 'auto auto 1fr minmax(240px, 320px)' },
-                    alignItems: 'center',
-                    gap: 1,
-                  }}
+          <CardContent sx={{ p: { xs: 1.5, md: 2 }, '&:last-child': { pb: { xs: 1.5, md: 2 } } }}>
+            <Stack spacing={1.5}>
+              {/* Toolbar */}
+              <Stack
+                  direction={{ xs: 'column', md: 'row' }}
+                  spacing={1}
+                  sx={{ alignItems: { md: 'center' }, justifyContent: 'space-between' }}
               >
-                <Button
-                    variant="contained"
-                    startIcon={<AddBoxIcon />}
-                    onClick={openNewAph}
-                    sx={{
-                      bgcolor: '#0f766e',
-                      minHeight: 32,
-                      px: 1.4,
-                      fontSize: 12.5,
-                      fontWeight: 800,
-                      '&:hover': { bgcolor: '#115e59' },
-                    }}
-                >
-                  Nuevo APH
-                </Button>
+                <Stack direction="row" spacing={1}>
+                  <Button
+                      variant="contained"
+                      startIcon={<AddBoxIcon />}
+                      onClick={openNewAph}
+                      sx={{
+                        bgcolor: '#0f766e',
+                        minHeight: 36,
+                        px: 2,
+                        fontSize: 13,
+                        fontWeight: 700,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+                        '&:hover': { bgcolor: '#115e59', boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)' },
+                      }}
+                  >
+                    Nuevo APH
+                  </Button>
 
-                <Button
-                    variant="outlined"
-                    color="inherit"
-                    sx={{ borderColor: '#cbd5e1', color: '#334155', minHeight: 32, px: 1.4, fontSize: 12.5, fontWeight: 800 }}
-                >
-                  Exportar a Excel
-                </Button>
+                  <Button
+                      variant="outlined"
+                      startIcon={<FileDownloadIcon />}
+                      sx={{
+                        borderColor: '#e2e8f0',
+                        color: '#475569',
+                        minHeight: 36,
+                        px: 2,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        '&:hover': { borderColor: '#cbd5e1', bgcolor: '#f8fafc' },
+                      }}
+                  >
+                    Exportar
+                  </Button>
 
-                <Box />
+                  <Tooltip title="Actualizar registros">
+                    <IconButton
+                        onClick={fetchRows}
+                        sx={{
+                          border: '1px solid #e2e8f0',
+                          borderRadius: 2,
+                          width: 36,
+                          height: 36,
+                          color: '#64748b',
+                          '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' },
+                        }}
+                    >
+                      <RefreshIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
 
                 <TextField
                     size="small"
-                    label="Buscar registro"
+                    placeholder="Buscar por paciente, documento, ambulancia..."
                     value={searchTerm}
                     onChange={(event) => setSearchTerm(event.target.value)}
-                    placeholder="Paciente, documento, ambulancia..."
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                              <SearchIcon sx={{ color: '#94a3b8', fontSize: 20 }} />
+                            </InputAdornment>
+                        ),
+                      },
+                    }}
                     sx={{
+                      minWidth: { md: 320 },
+                      maxWidth: { md: 380 },
                       '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
+                        borderRadius: 2,
                         bgcolor: '#f8fafc',
-                        minHeight: 34,
-                        fontSize: 12.5,
-                      },
-                      '& .MuiInputBase-input': {
-                        py: 0.6,
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontSize: 12,
+                        fontSize: 13,
+                        '& fieldset': { borderColor: '#e2e8f0' },
+                        '&:hover fieldset': { borderColor: '#cbd5e1' },
+                        '&.Mui-focused fieldset': { borderColor: '#0f766e' },
                       },
                     }}
                 />
-              </Box>
+              </Stack>
 
+              {/* Mobile cards */}
               <Box sx={{ display: { xs: 'grid', md: 'none' }, gap: 1 }}>
                 {sortedRows.length === 0 ? (
-                    <Paper variant="outlined" sx={{ p: 3, textAlign: 'center', color: 'text.secondary', borderRadius: 2 }}>
+                    <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', color: 'text.secondary', borderRadius: 2 }}>
                       No hay registros disponibles
                     </Paper>
                 ) : (
@@ -666,181 +779,95 @@ export function Prehospitalizacion() {
                             onView={() => handleViewPdf(row.id)}
                             onEdit={() => handleEdit(row.id)}
                             onDownload={() => handleDownloadPdf(row.id)}
+                            onFur={() => handleGenerateFur(row.id)}
                         />
                     ))
                 )}
               </Box>
 
-              <TableContainer
-                  sx={{
-                    display: { xs: 'none', md: 'block' },
-                    border: '1px solid #d9dee7',
-                    borderRadius: 1.5,
-                    overflowX: 'auto',
-                    position: 'relative',
-                  }}
-              >
-                <Table
-                    size="small"
-                    stickyHeader
+              {/* Desktop DataGrid */}
+              <Box sx={{ display: { xs: 'none', md: 'block' }, width: '100%' }}>
+                <DataGrid
+                    rows={filteredRows}
+                    columns={dataGridColumns}
+                    initialState={{
+                      pagination: { paginationModel: { pageSize: 10 } },
+                      sorting: { sortModel: [{ field: 'createdAt', sort: 'desc' }] },
+                    }}
+                    pageSizeOptions={[5, 10, 25, 50]}
+                    disableRowSelectionOnClick
+                    autoHeight
+                    rowHeight={48}
+                    columnHeaderHeight={44}
+                    localeText={{
+                      noRowsLabel: 'No hay registros disponibles',
+                      MuiTablePagination: {
+                        labelRowsPerPage: 'Filas por página:',
+                        labelDisplayedRows: ({ from, to, count }) => `${from}–${to} de ${count}`,
+                      },
+                      columnMenuSortAsc: 'Ordenar ascendente',
+                      columnMenuSortDesc: 'Ordenar descendente',
+                      columnMenuFilter: 'Filtrar',
+                      columnMenuHideColumn: 'Ocultar columna',
+                      columnMenuManageColumns: 'Gestionar columnas',
+                    }}
                     sx={{
-                      minWidth: 1450,
-                      tableLayout: 'fixed',
-                      '& .MuiTableCell-root': {
-                        px: 0.9,
-                        py: 0.4,
-                        height: 32,
-                        fontSize: 11.8,
-                        lineHeight: 1.15,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        verticalAlign: 'middle',
-                      },
-                      '& .MuiTableHead .MuiTableCell-root': {
-                        height: 30,
-                        fontSize: 11.8,
-                        fontWeight: 900,
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 2,
+                      '& .MuiDataGrid-columnHeaders': {
+                        bgcolor: '#f1f5f9',
+                        fontSize: 12.5,
+                        fontWeight: 700,
                         color: '#334155',
-                        bgcolor: '#f8fafc',
+                        letterSpacing: '0.01em',
                       },
-                      '& .MuiTableBody .MuiTableRow-root:hover .MuiTableCell-root': {
-                        bgcolor: '#f8fafc',
+                      '& .MuiDataGrid-columnSeparator': {
+                        color: '#e2e8f0',
                       },
-                      '& .MuiTableBody .MuiTableRow-root:hover .actions-sticky-cell': {
-                        bgcolor: '#f8fafc',
+                      '& .MuiDataGrid-cell': {
+                        fontSize: 13,
+                        color: '#1e293b',
+                        borderBottomColor: '#f1f5f9',
+                      },
+                      '& .MuiDataGrid-row': {
+                        '&:nth-of-type(even)': {
+                          bgcolor: '#fafbfc',
+                        },
+                        '&:hover': {
+                          bgcolor: '#f0fdf4',
+                        },
+                      },
+                      '& .MuiDataGrid-footerContainer': {
+                        borderTop: '1px solid #e2e8f0',
+                        bgcolor: '#fafbfc',
+                      },
+                      '& .MuiTablePagination-root': {
+                        fontSize: 13,
+                        color: '#475569',
+                      },
+                      '& .MuiDataGrid-cell[data-field="acciones"]': {
+                        position: 'sticky',
+                        right: 0,
+                        bgcolor: 'inherit',
+                        zIndex: 1,
+                        borderLeft: '1px solid #e2e8f0',
+                      },
+                      '& .MuiDataGrid-row:nth-of-type(even) .MuiDataGrid-cell[data-field="acciones"]': {
+                        bgcolor: '#fafbfc',
+                      },
+                      '& .MuiDataGrid-row:hover .MuiDataGrid-cell[data-field="acciones"]': {
+                        bgcolor: '#f0fdf4',
+                      },
+                      '& .MuiDataGrid-columnHeader[data-field="acciones"]': {
+                        position: 'sticky',
+                        right: 0,
+                        bgcolor: '#f1f5f9',
+                        zIndex: 2,
+                        borderLeft: '1px solid #e2e8f0',
                       },
                     }}
-                >
-                  <TableHead>
-                    <TableRow>
-                      {tableColumns.map((column) => (
-                          <TableCell
-                              key={column.label}
-                              sx={{
-                                width: column.width,
-                                minWidth: column.minWidth,
-                                maxWidth: column.maxWidth,
-                                ...(column.sticky ? stickyActionHeaderSx : {}),
-                              }}
-                          >
-                            {column.sortKey ? (
-                                <TableSortLabel
-                                    active={sortBy === column.sortKey}
-                                    direction={sortBy === column.sortKey ? sortOrder : 'asc'}
-                                    onClick={() => handleSort(column.sortKey as AphSortKey)}
-                                    sx={{
-                                      fontWeight: 900,
-                                      color: '#334155',
-                                      '&.Mui-active': {
-                                        color: '#075db8',
-                                      },
-                                      '& .MuiTableSortLabel-icon': {
-                                        fontSize: 16,
-                                      },
-                                    }}
-                                >
-                                  {column.label}
-                                </TableSortLabel>
-                            ) : (
-                                column.label
-                            )}
-                          </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-
-                  <TableBody>
-                    {sortedRows.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={tableColumns.length} align="center" sx={{ py: 3, color: 'text.secondary' }}>
-                            No hay registros disponibles
-                          </TableCell>
-                        </TableRow>
-                    ) : (
-                        sortedRows.map((row) => (
-                            <TableRow key={row.id} hover sx={{ '&:last-child td': { borderBottom: 0 } }}>
-                              <TableCell sx={{ fontWeight: 900 }}>{row.codigo || row.id}</TableCell>
-                              <TableCell>{row.createdAt?.split('T')[0] || ''}</TableCell>
-                              <TableCell>{row.movil || ''}</TableCell>
-                              <TableCell>{row.aseguradora || ''}</TableCell>
-                              <TableCell>{row.tipoDocumento || ''}</TableCell>
-                              <TableCell>{row.documento || ''}</TableCell>
-
-                              <TableCell title={getPatientName(row)}>
-                                {getPatientName(row)}
-                              </TableCell>
-
-                              <TableCell title={row.lugarOcurrencia || ''}>
-                                {row.lugarOcurrencia || ''}
-                              </TableCell>
-
-                              <TableCell title={row.transportadoA || ''}>
-                                {row.transportadoA || ''}
-                              </TableCell>
-
-                              <TableCell title={row.paramedico || ''}>
-                                {row.paramedico || ''}
-                              </TableCell>
-
-                              <TableCell title={row.conductor || ''}>
-                                {row.conductor || ''}
-                              </TableCell>
-
-                              <TableCell className="actions-sticky-cell" sx={stickyActionBodySx}>
-                                <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', justifyContent: 'center' }}>
-                                  <Tooltip title="Ver PDF">
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => handleViewPdf(row.id)}
-                                        sx={{
-                                          ...actionButtonSx,
-                                          bgcolor: '#0d6efd',
-                                          color: 'white',
-                                          '&:hover': { bgcolor: '#0b5ed7' },
-                                        }}
-                                    >
-                                      <PageviewIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-
-                                  <Tooltip title="Editar">
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => handleEdit(row.id)}
-                                        sx={{
-                                          ...actionButtonSx,
-                                          bgcolor: '#f59e0b',
-                                          color: 'white',
-                                          '&:hover': { bgcolor: '#d97706' },
-                                        }}
-                                    >
-                                      <EditIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-
-                                  <Tooltip title="Descargar PDF">
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => handleDownloadPdf(row.id)}
-                                        sx={{
-                                          ...actionButtonSx,
-                                          color: '#dc3545',
-                                          bgcolor: '#fff1f2',
-                                          '&:hover': { bgcolor: '#ffe4e6' },
-                                        }}
-                                    >
-                                      <PictureAsPdfIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                </Stack>
-                              </TableCell>
-                            </TableRow>
-                        ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                />
+              </Box>
             </Stack>
           </CardContent>
         </Card>
@@ -1080,11 +1107,13 @@ function AphMobileCard({
                          onView,
                          onEdit,
                          onDownload,
+                         onFur,
                        }: {
   row: AphResponse
   onView: () => void
   onEdit: () => void
   onDownload: () => void
+  onFur: () => void
 }) {
   return (
       <Paper variant="outlined" sx={{ p: 1.1, borderRadius: 2, bgcolor: 'white' }}>
@@ -1117,6 +1146,9 @@ function AphMobileCard({
             </Button>
             <Button fullWidth size="small" variant="outlined" color="error" onClick={onDownload} sx={{ fontWeight: 800 }}>
               PDF
+            </Button>
+            <Button fullWidth size="small" variant="outlined" onClick={onFur} sx={{ fontWeight: 800, color: '#16a34a', borderColor: '#16a34a' }}>
+              FUR
             </Button>
           </Stack>
         </Stack>
