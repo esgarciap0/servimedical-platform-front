@@ -333,8 +333,8 @@ async function drawInjuryPanel(ctx: Ctx, data: AphFull, x: number, y: number, wi
 
   const imageX = x + 8
   const imageY = y - height + 10
-  const imageW = 155
-  const imageH = height - 22
+  const imageW = width - 16        // ocupa todo el ancho del panel
+  const imageH = height - 28       // deja 18px para título + 10px de padding inferior
 
   ctx.page.drawRectangle({
     x: imageX,
@@ -354,8 +354,8 @@ async function drawInjuryPanel(ctx: Ctx, data: AphFull, x: number, y: number, wi
         y: imageY,
         width: imageW,
         height: imageH,
-        paddingX: 5,
-        paddingY: 5,
+        paddingX: 3,
+        paddingY: 3,
       })
     } catch {
       drawBodySilhouettes(ctx, imageX, imageY, imageW, imageH, data.lesiones)
@@ -363,38 +363,6 @@ async function drawInjuryPanel(ctx: Ctx, data: AphFull, x: number, y: number, wi
   } else {
     drawBodySilhouettes(ctx, imageX, imageY, imageW, imageH, data.lesiones)
   }
-
-  const textX = imageX + imageW + 10
-  drawText(ctx, 'Lesiones registradas', textX, y - 31, {
-    font: ctx.bold,
-    size: 7.2,
-    color: COLORS.blue,
-  })
-  drawWrappedText(ctx, listValues(data.lesiones), {
-    x: textX,
-    y: y - 44,
-    width: width - imageW - 28,
-    height: 34,
-    lineHeight: 7.4,
-    font: ctx.normal,
-    size: 6.3,
-    color: COLORS.slate,
-  })
-  drawText(ctx, 'Descripcion del evento', textX, y - 88, {
-    font: ctx.bold,
-    size: 7.2,
-    color: COLORS.blue,
-  })
-  drawWrappedText(ctx, firstValue(data.descripcionOtroEvento, data.causaExterna, 'Sin dato'), {
-    x: textX,
-    y: y - 101,
-    width: width - imageW - 28,
-    height: 34,
-    lineHeight: 7.4,
-    font: ctx.normal,
-    size: 6.3,
-    color: COLORS.slate,
-  })
 }
 
 function drawNarrativePair(ctx: Ctx, data: AphFull, x: number, y: number, width: number, height: number): void {
