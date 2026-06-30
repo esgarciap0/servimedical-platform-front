@@ -333,8 +333,8 @@ async function drawInjuryPanel(ctx: Ctx, data: AphFull, x: number, y: number, wi
 
   const imageX = x + 8
   const imageY = y - height + 10
-  const imageW = 112
-  const imageH = height - 31
+  const imageW = 155
+  const imageH = height - 22
 
   ctx.page.drawRectangle({
     x: imageX,
@@ -691,71 +691,73 @@ function drawBodySilhouettes(
   lesiones: string[] | undefined,
 ): void {
   const halfW = width / 2
-  const figH = height * 0.80
-  const centerY = y + height / 2
-  const leftCX = x + halfW * 0.48
-  const rightCX = x + halfW * 1.52
+  const leftCX = x + halfW / 2
+  const rightCX = x + halfW * 3 / 2
+  const figH = height - 14
+  const figBottom = y + 12
 
-  drawOneSilhouette(ctx, leftCX, centerY, figH)
-  drawOneSilhouette(ctx, rightCX, centerY, figH)
+  drawOneSilhouette(ctx, leftCX, figBottom, figH)
+  drawOneSilhouette(ctx, rightCX, figBottom, figH)
 
-  // Labels at the bottom of each silhouette
-  drawCenteredText(ctx, 'FRONTAL', leftCX, y + 7, ctx.normal, 4.5, COLORS.muted)
-  drawCenteredText(ctx, 'DORSAL', rightCX, y + 7, ctx.normal, 4.5, COLORS.muted)
+  drawCenteredText(ctx, 'FRONTAL', leftCX, y + 5, ctx.normal, 4.5, COLORS.muted)
+  drawCenteredText(ctx, 'DORSAL', rightCX, y + 5, ctx.normal, 4.5, COLORS.muted)
 
   if (lesiones && lesiones.length > 0) {
-    paintLesionMarks(ctx, lesiones, leftCX, centerY, figH, true)
-    paintLesionMarks(ctx, lesiones, rightCX, centerY, figH, false)
+    paintLesionMarks(ctx, lesiones, leftCX, figBottom, figH, true)
+    paintLesionMarks(ctx, lesiones, rightCX, figBottom, figH, false)
   }
 }
 
-function drawOneSilhouette(ctx: Ctx, cx: number, cy: number, h: number): void {
+function drawOneSilhouette(ctx: Ctx, cx: number, figBottom: number, figH: number): void {
   const page = ctx.page
   const stroke = COLORS.muted
   const fill = COLORS.white
-  const bw = 0.5
+  const bw = 0.75
 
-  const headR = h * 0.09
-  const headCy = cy + h * 0.41
+  const headR    = figH * 0.08
+  const headCY   = figBottom + figH * 0.92
 
-  const neckW = h * 0.07
-  const neckH = h * 0.05
-  const neckY = headCy - headR - neckH
+  const neckW    = figH * 0.08
+  const neckBotY = headCY - headR          // bottom of neck = bottom of head
+  const neckH    = figH * 0.06
 
-  const torsoW = h * 0.26
-  const torsoH = h * 0.28
-  const torsoY = cy + h * 0.02
+  const sBarW    = figH * 0.42             // shoulder bar spans arms
+  const sBarH    = figH * 0.06
+  const sBarBotY = neckBotY - neckH        // shoulder bar sits below neck
 
-  const armW = h * 0.08
-  const armH = h * 0.26
-  const armY = cy + h * 0.06
+  const torsoW   = figH * 0.28
+  const torsoH   = figH * 0.30
+  const torsoBotY = sBarBotY - torsoH
 
-  const legW = h * 0.10
-  const legH = h * 0.30
-  const legY = cy - h * 0.14
+  const armW     = figH * 0.08
+  const armH     = figH * 0.40            // arms from shoulder to pelvis level
+  const armBotY  = sBarBotY - armH
 
-  // Head
-  page.drawCircle({ x: cx, y: headCy, size: headR, borderColor: stroke, borderWidth: bw, color: fill })
-  // Neck
-  page.drawRectangle({ x: cx - neckW / 2, y: neckY, width: neckW, height: neckH, color: fill, borderColor: stroke, borderWidth: bw })
-  // Torso
-  page.drawRectangle({ x: cx - torsoW / 2, y: torsoY, width: torsoW, height: torsoH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
-  // Left arm
-  page.drawRectangle({ x: cx - torsoW / 2 - armW, y: armY, width: armW, height: armH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
-  // Right arm
-  page.drawRectangle({ x: cx + torsoW / 2, y: armY, width: armW, height: armH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
-  // Left leg
-  page.drawRectangle({ x: cx - legW - 1, y: legY - legH, width: legW, height: legH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
-  // Right leg
-  page.drawRectangle({ x: cx + 1, y: legY - legH, width: legW, height: legH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
+  const pelvisW  = figH * 0.30
+  const pelvisH  = figH * 0.10
+  const pelvisBotY = torsoBotY - pelvisH
+
+  const legW     = figH * 0.11
+  const legH     = pelvisBotY - figBottom  // legs fill to pelvis bottom
+  const legBotY  = figBottom
+
+  page.drawCircle({ x: cx, y: headCY, size: headR, borderColor: stroke, borderWidth: bw, color: fill })
+  page.drawRectangle({ x: cx - neckW / 2, y: neckBotY, width: neckW, height: neckH, color: fill, borderColor: stroke, borderWidth: bw })
+  page.drawRectangle({ x: cx - sBarW / 2, y: sBarBotY, width: sBarW, height: sBarH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 1 })
+  page.drawRectangle({ x: cx - torsoW / 2, y: torsoBotY, width: torsoW, height: torsoH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 1 })
+  page.drawRectangle({ x: cx - sBarW / 2, y: armBotY, width: armW, height: armH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
+  page.drawRectangle({ x: cx + sBarW / 2 - armW, y: armBotY, width: armW, height: armH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
+  page.drawRectangle({ x: cx - pelvisW / 2, y: pelvisBotY, width: pelvisW, height: pelvisH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 1 })
+  page.drawRectangle({ x: cx - pelvisW / 2, y: legBotY, width: legW, height: legH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
+  page.drawRectangle({ x: cx + pelvisW / 2 - legW, y: legBotY, width: legW, height: legH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
 }
 
 function paintLesionMarks(
   ctx: Ctx,
   lesiones: string[],
   cx: number,
-  cy: number,
-  h: number,
+  figBottom: number,
+  figH: number,
   frontView: boolean,
 ): void {
   const page = ctx.page
@@ -769,44 +771,44 @@ function paintLesionMarks(
     if (norm.includes('DERECH')) side = frontView ? 1 : -1
     if (norm.includes('IZQUIERD')) side = frontView ? -1 : 1
 
-    // [offsetX as fraction of h, offsetY from cy as fraction of h, width, height]
+    // [offsetX from cx, centerY from figBottom, markW, markH] — all as fraction of figH
     let zone: [number, number, number, number] | null = null
 
     if (norm.includes('CABEZA') || norm.includes('CRANEO') || norm.includes('FRONTAL') || norm.includes('CARA')) {
-      zone = [0, 0.38, 0.18, 0.16]
+      zone = [0, 0.92, 0.18, 0.18]
     } else if (norm.includes('CUELLO') || norm.includes('CERVICAL')) {
-      zone = [0, 0.27, 0.10, 0.05]
+      zone = [0, 0.87, 0.09, 0.06]
     } else if (norm.includes('HOMBRO')) {
-      zone = [side * 0.17, 0.24, 0.10, 0.06]
+      zone = [side * 0.17, 0.81, 0.10, 0.07]
     } else if (norm.includes('BRAZO') || norm.includes('HUMERO')) {
-      zone = [side * 0.22, 0.14, 0.08, 0.12]
+      zone = [side * 0.17, 0.62, 0.09, 0.16]
     } else if (norm.includes('ANTEBRAZO') || norm.includes('MUNECA') || norm.includes('MANO')) {
-      zone = [side * 0.22, -0.02, 0.08, 0.10]
+      zone = [side * 0.17, 0.44, 0.09, 0.10]
     } else if (norm.includes('TORAX') || norm.includes('TORACI') || norm.includes('HEMITORA') || norm.includes('COSTILLA') || norm.includes('PECHO')) {
-      zone = [side * 0.06, 0.17, 0.18, 0.10]
+      zone = [side * 0.06, 0.65, 0.20, 0.12]
     } else if (norm.includes('ABDOMEN') || norm.includes('VIENTRE')) {
-      zone = [side * 0.04, 0.05, 0.16, 0.08]
+      zone = [side * 0.04, 0.54, 0.18, 0.09]
     } else if (norm.includes('ESPALDA') || norm.includes('LUMBAR') || norm.includes('DORSAL')) {
-      zone = [side * 0.04, 0.10, 0.18, 0.14]
+      zone = [side * 0.04, 0.60, 0.20, 0.18]
     } else if (norm.includes('CADERA') || norm.includes('PELVIS')) {
-      zone = [side * 0.05, -0.08, 0.16, 0.07]
+      zone = [side * 0.05, 0.43, 0.20, 0.10]
     } else if (norm.includes('RODILLA')) {
-      zone = [side * 0.06, -0.27, 0.07, 0.05]
+      zone = [side * 0.095, 0.17, 0.09, 0.05]
     } else if (norm.includes('MUSLO') || norm.includes('FEMUR') || norm.includes('PIERNA')) {
-      zone = [side * 0.06, -0.18, 0.07, 0.10]
+      zone = [side * 0.095, 0.26, 0.10, 0.14]
     } else if (norm.includes('TOBILLO') || norm.includes('PIE')) {
-      zone = [side * 0.06, -0.40, 0.07, 0.05]
+      zone = [side * 0.095, 0.04, 0.09, 0.06]
     }
 
     if (zone) {
       const [ox, oy, zw, zh] = zone
       page.drawRectangle({
-        x: cx + ox * h - (zw * h) / 2,
-        y: cy + oy * h - (zh * h) / 2,
-        width: zw * h,
-        height: zh * h,
+        x: cx + ox * figH - (zw * figH) / 2,
+        y: figBottom + oy * figH - (zh * figH) / 2,
+        width: zw * figH,
+        height: zh * figH,
         color: COLORS.red,
-        opacity: 0.72,
+        opacity: 0.75,
         borderRadius: 1.5,
       })
     }
