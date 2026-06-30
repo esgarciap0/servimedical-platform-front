@@ -3,6 +3,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import AnalyticsIcon from '@mui/icons-material/Analytics'
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn'
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital'
+import LocalShippingIcon from '@mui/icons-material/LocalShipping'
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices'
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
 import type { SvgIconComponent } from '@mui/icons-material'
@@ -26,6 +27,12 @@ export const modules: ModuleItem[] = [
     path: '/prehospitalizacion',
     description: 'Coordinacion de atencion inicial, traslados y admisiones previas.',
     icon: MedicalServicesIcon,
+  },
+  {
+    name: 'Ambulancias',
+    path: '/ambulancias',
+    description: 'Registro y gestion de ambulancias, moviles y tripulacion.',
+    icon: LocalShippingIcon,
   },
   {
     name: 'Hospitalizacion',

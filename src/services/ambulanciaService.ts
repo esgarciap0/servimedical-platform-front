@@ -1,0 +1,18 @@
+import { api } from './api'
+import type { AmbulanciaForm, AmbulanciaResponse } from '../types/ambulancia'
+
+const RESOURCE = '/ambulancias'
+
+export const ambulanciaService = {
+  list: (signal?: AbortSignal) => api.get<AmbulanciaResponse[]>(RESOURCE, { signal }),
+
+  getById: (id: number, signal?: AbortSignal) =>
+    api.get<AmbulanciaResponse>(`${RESOURCE}/${id}`, { signal }),
+
+  create: (payload: AmbulanciaForm) => api.post<AmbulanciaResponse>(RESOURCE, payload),
+
+  update: (id: number, payload: AmbulanciaForm) =>
+    api.put<AmbulanciaResponse>(`${RESOURCE}/${id}`, payload),
+
+  remove: (id: number) => api.delete<void>(`${RESOURCE}/${id}`),
+}

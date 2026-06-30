@@ -1,570 +1,703 @@
-﻿import { PDFDocument, PDFImage, PDFPage, PDFFont, rgb, StandardFonts } from 'pdf-lib'
-import type { AphPayload } from '../types/aph'
+import { PDFDocument, PDFImage, PDFPage, PDFFont, rgb, StandardFonts } from 'pdf-lib'
+import type { AphPayload, AphResponse } from '../types/aph'
 
 const PAGE_WIDTH = 595.28
 const PAGE_HEIGHT = 841.89
+const MARGIN = 22
+const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2
 
-const MARGIN_X = 10
-const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_X * 2
+const COLORS = {
+  navy: rgb(0.04, 0.15, 0.26),
+  navySoft: rgb(0.08, 0.24, 0.38),
+  blue: rgb(0.02, 0.34, 0.62),
+  cyan: rgb(0.02, 0.55, 0.78),
+  red: rgb(0.78, 0.06, 0.12),
+  green: rgb(0.04, 0.48, 0.34),
+  amber: rgb(0.86, 0.49, 0.08),
+  slate: rgb(0.19, 0.25, 0.33),
+  muted: rgb(0.43, 0.5, 0.59),
+  border: rgb(0.79, 0.84, 0.9),
+  divider: rgb(0.9, 0.93, 0.96),
+  fill: rgb(0.97, 0.98, 0.99),
+  tint: rgb(0.92, 0.97, 1),
+  white: rgb(1, 1, 1),
+}
 
-const SECTION_HEIGHT = 10
-const LABEL_HEIGHT = 7.5
-const LABEL_VALUE_GAP = 2.8
-const VALUE_HEIGHT = 9.5
-const ROW_HEIGHT = LABEL_HEIGHT + LABEL_VALUE_GAP + VALUE_HEIGHT
+type AphFull = AphPayload & Partial<Pick<AphResponse, 'id' | 'codigo' | 'createdAt' | 'updatedAt'>>
 
-const LABEL_FONT_SIZE = 5.8
-const VALUE_FONT_SIZE = 5.4
-const SECTION_FONT_SIZE = 6.6
-
-type AphFull = AphPayload
-type AphData = AphPayload
-
-
-interface Ctx {
+type Ctx = {
   doc: PDFDocument
   page: PDFPage
   bold: PDFFont
   normal: PDFFont
 }
 
-type Cell = {
+type KeyValue = {
   label: string
   value: string
-  span: number
+  span?: number
+  emphasis?: boolean
 }
 
-type InlineCell = {
-  label: string
-  value: string
+type TextOptions = {
+  font?: PDFFont
+  size?: number
+  color?: ReturnType<typeof rgb>
+  maxWidth?: number
 }
 
 export async function generatePdf(data: AphFull, logoBase64?: string): Promise<Uint8Array> {
   const doc = await PDFDocument.create()
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold)
+  const normal = await doc.embedFont(StandardFonts.Helvetica)
   const page = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT])
+  const ctx: Ctx = { doc, page, bold, normal }
+  const logo = await resolveLogo(doc, logoBase64)
 
-  const bold = await doc.embedFont(StandardFonts.TimesRomanBold)
-  const normal = await doc.embedFont(StandardFonts.TimesRoman)
-
-  const ctx: Ctx = {
-    doc,
-    page,
-    bold,
-    normal,
-  }
-
-  let y = PAGE_HEIGHT - 16
-
-  y = await drawHeader(ctx, y, data, logoBase64)
-
-  y = drawSection(ctx, y, 'DATOS DEL PACIENTE')
-  y = drawPatientData(ctx, y, data)
-
-  y = drawSection(ctx, y, 'CAUSA EXTERNA')
-  y = drawExternalCause(ctx, y, data)
-
-  y = drawSection(ctx, y, 'ANTECEDENTES PERSONALES')
-  y = drawPersonalHistory(ctx, y, data)
-
-  y = drawPhysicalExam(ctx, y, data)
-
-  y = drawSection(ctx, y, 'UBICACION DE LAS LESIONES')
-  y = await drawInjuryLocation(ctx, y, data)
-
-  y = drawSection(ctx, y, 'DIAGNOSTICOS  /  HALLAZGOS')
-  y = drawDiagnosisAndFindings(ctx, y, data)
-
-  y = drawSection(ctx, y, 'PROCEDIMIENTOS REALIZADOS')
-  y = drawProcedures(ctx, y, data)
-
-  y = drawSection(ctx, y, 'MATERIALES Y DROGAS UTILIZADAS')
-  y = drawMaterials(ctx, y, data)
-
-  y = drawSection(ctx, y, 'FIRMAS / SELLOS')
-  drawSignatures(ctx, y, data)
-
-  drawFooter(ctx)
+  await drawSinglePage(ctx, data, logo)
 
   return doc.save()
 }
 
-async function drawHeader(ctx: Ctx, y: number, data: AphData, logoBase64?: string): Promise<number> {
-  const top = y
+async function drawSinglePage(ctx: Ctx, data: AphFull, logo: PDFImage | null): Promise<void> {
+  drawPageBackground(ctx)
 
-  if (logoBase64) {
-    try {
-      const logoBytes = base64ToBytes(removeBase64Prefix(logoBase64))
-      const logo = await embedImage(ctx.doc, logoBytes, logoBase64)
+  drawHeader(ctx, data, logo)
+  drawSummary(ctx, data)
 
-      ctx.page.drawImage(logo, {
-        x: MARGIN_X + 46,
-        y: top - 58,
-        width: 58,
-        height: 50,
-      })
-    } catch {
-      // Logo is optional. The PDF can still be generated without it.
-    }
-  }
-
-  drawCenteredText(ctx.page, 'ATENCIÃ“N PRE-HOSPITALARIA', PAGE_WIDTH / 2, top - 24, ctx.bold, 11.5)
-
-  ctx.page.drawText('FAPH v1', {
-    x: PAGE_WIDTH - 105,
-    y: top - 20,
-    font: ctx.bold,
-    size: 8.5,
+  drawInfoPanel(ctx, {
+    x: MARGIN,
+    y: 718,
+    width: 270,
+    height: 100,
+    title: 'Paciente y contacto',
+    columns: 6,
+    rowHeight: 18,
+    cells: [
+      kv('Paciente', fullName(data), 3, true),
+      kv('Documento', joinValues([data.tipoDocumento, data.documento]), 2),
+      kv('Sexo', data.sexo, 1),
+      kv('Nacimiento', data.fechaNacimiento, 2),
+      kv('Edad', data.edad, 1),
+      kv('Celular', data.celular, 2),
+      kv('Direccion', data.direccion, 3),
+      kv('Municipio', joinLocation(data.departamento, data.ciudad), 3),
+      kv('Acompanante', data.acompanante, 2),
+      kv('Avisar a', joinValues([data.avisarA, data.numeroParaAvisar]), 4),
+    ],
   })
 
-  ctx.page.drawText('01/03/2025', {
-    x: PAGE_WIDTH - 113,
-    y: top - 35,
-    font: ctx.bold,
-    size: 8.5,
+  drawInfoPanel(ctx, {
+    x: 303,
+    y: 718,
+    width: 270,
+    height: 100,
+    title: 'Evento, traslado y aseguramiento',
+    columns: 6,
+    rowHeight: 18,
+    cells: [
+      kv('Causa', data.causaExterna, 2, true),
+      kv('Naturaleza', data.naturalezaEvento, 2),
+      kv('Aseg.', data.estadoAseguramiento, 2),
+      kv('Lugar', data.lugarOcurrencia, 3),
+      kv('Origen', joinLocation(data.departamentoOrigen, data.municipioOrigen), 2),
+      kv('Estado', data.estadoPaciente, 1, true),
+      kv('Transportado a', data.transportadoA, 3, true),
+      kv('Destino', joinLocation(data.departamentoTraslado, data.ciudadTransporte), 2),
+      kv('Hab.', firstValue(data.codigoHabilitacion, data.codigoHabilitacionPrestadorRecibe), 1),
+      kv('Plan', firstValue(data.planBeneficios, data.poliza, data.numeroPolizaSoat), 2),
+      kv('Victima', data.condicionVictima, 2),
+    ],
   })
 
-  const infoY = top - 72
+  drawClinicalPanel(ctx, data, MARGIN, 606, 270, 130)
+  await drawInjuryPanel(ctx, data, 303, 606, 270, 130)
 
-  ctx.page.drawText('Placa:', {
-    x: MARGIN_X + 4,
-    y: infoY,
-    font: ctx.bold,
-    size: 7,
-  })
-
-  ctx.page.drawText(nvl(data.placa), {
-    x: MARGIN_X + 34,
-    y: infoY,
-    font: ctx.bold,
-    size: 7,
-  })
-
-  ctx.page.drawText('Movil:', {
-    x: PAGE_WIDTH / 2 - 80,
-    y: infoY,
-    font: ctx.bold,
-    size: 7,
-  })
-
-  ctx.page.drawText(nvl(data.movil), {
-    x: PAGE_WIDTH / 2 - 44,
-    y: infoY,
-    font: ctx.bold,
-    size: 7,
-  })
-
-  return top - 84
+  drawNarrativePair(ctx, data, MARGIN, 464, CONTENT_WIDTH, 120)
+  drawCareAndAdmin(ctx, data, MARGIN, 332, CONTENT_WIDTH, 112)
+  drawCrewAndSignatures(ctx, data, MARGIN, 208, CONTENT_WIDTH, 124)
+  drawFooter(ctx, data)
 }
 
-function drawSection(ctx: Ctx, y: number, title: string): number {
+function drawPageBackground(ctx: Ctx): void {
   ctx.page.drawRectangle({
-    x: MARGIN_X,
-    y: y - SECTION_HEIGHT,
+    x: 0,
+    y: 0,
+    width: PAGE_WIDTH,
+    height: PAGE_HEIGHT,
+    color: COLORS.white,
+  })
+}
+
+function drawHeader(ctx: Ctx, data: AphFull, logo: PDFImage | null): void {
+  const height = 52
+
+  ctx.page.drawRectangle({
+    x: MARGIN,
+    y: PAGE_HEIGHT - MARGIN - height,
     width: CONTENT_WIDTH,
-    height: SECTION_HEIGHT,
-    color: rgb(0.64, 0.64, 0.64),
+    height,
+    color: COLORS.navy,
+  })
+  ctx.page.drawRectangle({
+    x: MARGIN,
+    y: PAGE_HEIGHT - MARGIN - height,
+    width: 5,
+    height,
+    color: COLORS.cyan,
   })
 
-  drawCenteredText(ctx.page, title, PAGE_WIDTH / 2, y - 7, ctx.bold, SECTION_FONT_SIZE)
+  drawLogo(ctx, logo, MARGIN + 14, PAGE_HEIGHT - MARGIN - 42, 34, 34)
+  drawText(ctx, 'ATENCION PREHOSPITALARIA', MARGIN + 60, PAGE_HEIGHT - MARGIN - 22, {
+    font: ctx.bold,
+    size: 14,
+    color: COLORS.white,
+    maxWidth: 292,
+  })
+  drawText(ctx, 'Registro clinico y operativo de ambulancia - IPS Servimedical', MARGIN + 61, PAGE_HEIGHT - MARGIN - 38, {
+    size: 7,
+    color: rgb(0.76, 0.87, 0.95),
+    maxWidth: 292,
+  })
 
-  return y - SECTION_HEIGHT
+  const metaX = PAGE_WIDTH - MARGIN - 158
+  ctx.page.drawRectangle({
+    x: metaX,
+    y: PAGE_HEIGHT - MARGIN - 41,
+    width: 140,
+    height: 30,
+    color: COLORS.navySoft,
+    borderColor: rgb(0.16, 0.48, 0.67),
+    borderWidth: 0.6,
+  })
+  drawText(ctx, 'FAPH v1', metaX + 9, PAGE_HEIGHT - MARGIN - 23, {
+    font: ctx.bold,
+    size: 8,
+    color: COLORS.white,
+  })
+  drawText(ctx, 'Version 01/03/2025', metaX + 9, PAGE_HEIGHT - MARGIN - 35, {
+    size: 6.1,
+    color: rgb(0.75, 0.87, 0.95),
+  })
+  drawText(ctx, firstValue(data.codigo, data.id ? String(data.id) : '', 'Autogenerado'), metaX + 70, PAGE_HEIGHT - MARGIN - 29, {
+    font: ctx.bold,
+    size: 6.3,
+    color: rgb(0.8, 0.93, 1),
+    maxWidth: 60,
+  })
 }
 
-function drawPatientData(ctx: Ctx, y: number, data: AphData): number {
-  y = tableRow(ctx, y, [
-    cell('Tipo ID', nvl(data.tipoDocumento), 1),
-    cell('No. de IdentificaciÃ³n', nvl(data.documento), 2),
-    cell('Nombres y Apellidos', fullName(data), 4),
-    cell('Sexo', nvl(data.sexo), 1),
-    cell('CÃ³digo CUPS', nvl(data.codigo), 1),
-    cell('Tipo de traslado', nvl(data.tipoTraslado), 2),
-    cell('Prioridad', nvl(data.prioridad), 1),
-  ])
+function drawSummary(ctx: Ctx, data: AphFull): void {
+  const y = 758
+  const height = 29
+  const gap = 5
+  const items = [
+    { label: 'Codigo APH', value: firstValue(data.codigo, data.id ? String(data.id) : '', 'Autogenerado'), color: COLORS.blue },
+    { label: 'Prioridad', value: data.prioridad, color: priorityColor(data.prioridad) },
+    { label: 'Movil', value: data.movil, color: COLORS.green },
+    { label: 'Placa', value: data.placa, color: COLORS.slate },
+    { label: 'Fecha / hora', value: joinValues([data.fechaAccidente, data.horaAccidente]), color: COLORS.slate },
+    { label: 'Llegada', value: data.horaLlegada, color: COLORS.slate },
+  ]
+  const width = (CONTENT_WIDTH - gap * (items.length - 1)) / items.length
 
-  y = tableRow(ctx, y, [
-    cell('Fecha de traslado', nvl(data.fechaAccidente), 2),
-    cell('Hora de traslado', nvl(data.horaAccidente), 2),
-    cell('Lugar de ocurrencia de la atenciÃ³n', nvl(data.lugarOcurrencia), 5),
-    cell('Zona', nvl(data.zonaOrigen), 1),
-    cell('Departamento', nvl(data.departamentoOrigen), 2),
-    cell('Municipio', nvl(data.municipioOrigen), 2),
-  ])
-
-  y = tableRow(ctx, y, [
-    cell('Fecha de Nacimiento', nvl(data.fechaNacimiento), 3),
-    cell('Edad', nvl(data.edad), 1),
-    cell('Estado Civil', nvl(data.estadoCivil), 3),
-    cell('OcupaciÃ³n', nvl(data.ocupacion), 3),
-    cell('Celular', nvl(data.celular), 2),
-  ])
-
-  y = tableRow(ctx, y, [
-    cell('DirecciÃ³n de Residencia', nvl(data.direccion), 5),
-    cell('Telefono', nvl(data.telefono), 2),
-    cell('Zona', nvl(data.zonaPaciente), 1),
-    cell('Departamento', nvl(data.departamento), 2),
-    cell('Municipio', nvl(data.ciudad), 2),
-  ])
-
-  y = tableRow(ctx, y, [
-    cell('Nombres del AcompaÃ±ante', nvl(data.acompanante), 4),
-    cell('No. de telefono', nvl(data.celularAcompanante), 2),
-    cell('Avisar a', nvl(data.avisarA), 3),
-    cell('Parentesco', nvl(data.parentesco), 2),
-    cell('No. de telefono', nvl(data.numeroParaAvisar), 2),
-  ])
-
-  y = tableRow(ctx, y, [
-    cell('Aseguradora Responsable del paciente', nvl(data.aseguradora), 5),
-    cell('Poliza o No carnet', nvl(data.poliza), 3),
-    cell('DescripciÃ³n del plan de beneficios', nvl(data.planBeneficios), 5),
-  ])
-
-  return tableRow(ctx, y, [
-    cell('Hora de llegada', nvl(data.horaLlegada), 2),
-    cell('Transportado a', nvl(data.transportadoA), 4),
-    cell('Cod HabilitaciÃ³n', nvl(data.codigoHabilitacion), 3),
-    cell('Departamento', nvl(data.departamentoTraslado), 2),
-    cell('Municipio', nvl(data.ciudadTransporte), 2),
-    cell('Estado', nvl(data.estadoPaciente), 1),
-  ])
+  items.forEach((item, index) => {
+    const x = MARGIN + index * (width + gap)
+    ctx.page.drawRectangle({
+      x,
+      y: y - height,
+      width,
+      height,
+      color: COLORS.fill,
+      borderColor: COLORS.border,
+      borderWidth: 0.55,
+    })
+    ctx.page.drawRectangle({
+      x,
+      y: y - height,
+      width: 3,
+      height,
+      color: item.color,
+    })
+    drawText(ctx, item.label.toUpperCase(), x + 9, y - 11, {
+      font: ctx.bold,
+      size: 5.2,
+      color: COLORS.muted,
+      maxWidth: width - 14,
+    })
+    drawText(ctx, nvl(item.value) || 'Sin dato', x + 9, y - 23, {
+      font: ctx.bold,
+      size: 7.6,
+      color: COLORS.slate,
+      maxWidth: width - 14,
+    })
+  })
 }
 
-function drawExternalCause(ctx: Ctx, y: number, data: AphData): number {
-  return inlineRow(ctx, y, [
-    {
-      label: 'Causa Externa Origina la Atencion',
-      value: nvl(data.causaExterna),
+function drawInfoPanel(
+    ctx: Ctx,
+    options: {
+      x: number
+      y: number
+      width: number
+      height: number
+      title: string
+      cells: KeyValue[]
+      columns: number
+      rowHeight: number
     },
-    {
-      label: 'Motivo de Consulta',
-      value: nvl(data.diagnosticos),
-    },
-  ])
+): void {
+  drawSectionFrame(ctx, options.x, options.y, options.width, options.height, options.title)
+  drawKeyGrid(ctx, {
+    x: options.x + 8,
+    y: options.y - 21,
+    width: options.width - 16,
+    cells: options.cells,
+    columns: options.columns,
+    rowHeight: options.rowHeight,
+    gap: 3,
+  })
 }
 
-function drawPersonalHistory(ctx: Ctx, y: number, data: AphData): number {
-  return tableRow(ctx, y, [
-    cell('Alergias', nvl(data.alergia), 1),
-    cell('Liquidos y Alimentos', nvl(data.liquidos), 2),
-    cell('Medicacion', nvl(data.medicacion), 2),
-    cell('Patologicos', nvl(data.patologicos), 2),
-  ])
-}
+function drawClinicalPanel(ctx: Ctx, data: AphFull, x: number, y: number, width: number, height: number): void {
+  drawSectionFrame(ctx, x, y, width, height, 'Evaluacion clinica')
 
-function drawPhysicalExam(ctx: Ctx, y: number, data: AphData): number {
-  const ratio = 0.68
-  const leftW = CONTENT_WIDTH * ratio
-  const rightW = CONTENT_WIDTH - leftW
+  const innerX = x + 8
+  const innerY = y - 22
+  const vitalW = width - 16
+  const glasgowW = 86
+  const sampleW = width - 24 - glasgowW
 
-  ctx.page.drawRectangle({
-    x: MARGIN_X,
-    y: y - SECTION_HEIGHT,
-    width: leftW,
-    height: SECTION_HEIGHT,
-    color: rgb(0.64, 0.64, 0.64),
+  drawSubHeader(ctx, innerX, innerY, vitalW, 15, 'Signos vitales')
+  const vitals = [
+    ['PA', data.presion],
+    ['FC', data.frecuenciaCardiaca],
+    ['FR', data.frecuenciaRespiratoria],
+    ['Temp', data.temperatura],
+  ]
+  const vitalCellW = vitalW / vitals.length
+  vitals.forEach(([label, value], index) => {
+    const cellX = innerX + index * vitalCellW
+    ctx.page.drawRectangle({
+      x: cellX,
+      y: innerY - 43,
+      width: vitalCellW,
+      height: 28,
+      color: index % 2 === 0 ? COLORS.white : COLORS.fill,
+      borderColor: COLORS.divider,
+      borderWidth: 0.45,
+    })
+    drawText(ctx, label, cellX + 6, innerY - 25, {
+      font: ctx.bold,
+      size: 6.1,
+      color: COLORS.muted,
+    })
+    drawText(ctx, nvl(value) || '-', cellX + 6, innerY - 38, {
+      font: ctx.bold,
+      size: 8.4,
+      color: COLORS.slate,
+      maxWidth: vitalCellW - 12,
+    })
   })
 
-  ctx.page.drawRectangle({
-    x: MARGIN_X + leftW,
-    y: y - SECTION_HEIGHT,
-    width: rightW,
-    height: SECTION_HEIGHT,
-    color: rgb(0.64, 0.64, 0.64),
+  const lowerY = innerY - 52
+  const glasgowX = innerX
+  drawSubHeader(ctx, glasgowX, lowerY, glasgowW, 15, 'Glasgow')
+  drawKeyGrid(ctx, {
+    x: glasgowX,
+    y: lowerY - 18,
+    width: glasgowW,
+    cells: [kv('RO', data.ro), kv('RV', data.rv), kv('RM', data.rm), kv('Total', sumNumbers([data.ro, data.rv, data.rm]), 3, true)],
+    columns: 3,
+    rowHeight: 18,
+    gap: 3,
   })
 
-  drawCenteredText(ctx.page, 'EXAMEN FISICO', MARGIN_X + leftW / 2, y - 7, ctx.bold, SECTION_FONT_SIZE)
-  drawCenteredText(ctx.page, 'GLASGOW', MARGIN_X + leftW + rightW / 2, y - 7, ctx.bold, SECTION_FONT_SIZE)
+  const sampleX = glasgowX + glasgowW + 8
+  drawSubHeader(ctx, sampleX, lowerY, sampleW, 15, 'Antecedentes')
+  drawWrappedText(ctx, buildSampleHistory(data), {
+    x: sampleX + 5,
+    y: lowerY - 24,
+    width: sampleW - 10,
+    height: 48,
+    lineHeight: 7.6,
+    font: ctx.normal,
+    size: 6.2,
+    color: COLORS.slate,
+  })
 
-  y -= SECTION_HEIGHT
-
-  return tableRow(ctx, y, [
-    cell('PA', nvl(data.presion), 1),
-    cell('FC', nvl(data.frecuenciaCardiaca), 1),
-    cell('FR', nvl(data.frecuenciaRespiratoria), 1),
-    cell('Temp', nvl(data.temperatura), 1),
-    cell('RO', nvl(data.ro), 1),
-    cell('RV', nvl(data.rv), 1),
-    cell('RM', nvl(data.rm), 1),
-  ])
 }
 
-async function drawInjuryLocation(ctx: Ctx, y: number, data: AphFull): Promise<number> {
-  const panelHeight = 165
+async function drawInjuryPanel(ctx: Ctx, data: AphFull, x: number, y: number, width: number, height: number): Promise<void> {
+  drawSectionFrame(ctx, x, y, width, height, 'Ubicacion de lesiones')
+
+  const imageX = x + 8
+  const imageY = y - height + 10
+  const imageW = 112
+  const imageH = height - 31
 
   ctx.page.drawRectangle({
-    x: MARGIN_X,
-    y: y - panelHeight,
-    width: CONTENT_WIDTH,
-    height: panelHeight,
-    borderColor: rgb(0, 0, 0),
-    borderWidth: 0.25,
+    x: imageX,
+    y: imageY,
+    width: imageW,
+    height: imageH,
+    color: COLORS.fill,
+    borderColor: COLORS.divider,
+    borderWidth: 0.45,
   })
 
   if (data.lesionesImagen && data.lesionesImagen.trim()) {
     try {
       const image = await embedBase64Image(ctx.doc, data.lesionesImagen)
-
       drawImageContained(ctx.page, image, {
-        x: MARGIN_X,
-        y: y - panelHeight,
-        width: CONTENT_WIDTH,
-        height: panelHeight,
-        paddingX: 145,
-        paddingY: 6,
+        x: imageX,
+        y: imageY,
+        width: imageW,
+        height: imageH,
+        paddingX: 5,
+        paddingY: 5,
       })
     } catch {
-      drawMissingInjuryImage(ctx, y, panelHeight)
+      drawMissingBodyMap(ctx, imageX, imageY, imageW, imageH)
     }
   } else {
-    drawMissingInjuryImage(ctx, y, panelHeight)
+    drawMissingBodyMap(ctx, imageX, imageY, imageW, imageH)
   }
 
-  return y - panelHeight
-}
-
-function drawMissingInjuryImage(ctx: Ctx, y: number, panelHeight: number): void {
-  const title = 'Imagen de lesiones no disponible'
-  const subtitle = 'Verifique que lesionesImagen llegue desde el front'
-
-  drawCenteredText(ctx.page, title, PAGE_WIDTH / 2, y - panelHeight / 2 + 8, ctx.bold, 8)
-  drawCenteredText(ctx.page, subtitle, PAGE_WIDTH / 2, y - panelHeight / 2 - 6, ctx.normal, 6)
-}
-
-function drawDiagnosisAndFindings(ctx: Ctx, y: number, data: AphData): number {
-  const labelW = 85
-  const valueW = CONTENT_WIDTH - labelW
-
-  const diagnosisHeight = 18
-
-  ctx.page.drawRectangle({
-    x: MARGIN_X,
-    y: y - diagnosisHeight,
-    width: labelW,
-    height: diagnosisHeight,
-    borderColor: rgb(0, 0, 0),
-    borderWidth: 0.25,
-  })
-
-  ctx.page.drawRectangle({
-    x: MARGIN_X + labelW,
-    y: y - diagnosisHeight,
-    width: valueW,
-    height: diagnosisHeight,
-    borderColor: rgb(0, 0, 0),
-    borderWidth: 0.25,
-  })
-
-  ctx.page.drawText('Diagnostico CIE10', {
-    x: MARGIN_X + 4,
-    y: y - 11,
+  const textX = imageX + imageW + 10
+  drawText(ctx, 'Lesiones registradas', textX, y - 31, {
     font: ctx.bold,
-    size: LABEL_FONT_SIZE,
+    size: 7.2,
+    color: COLORS.blue,
   })
-
-  ctx.page.drawText(truncate(nvl(data.diagnosticos), Math.floor(valueW / 3)), {
-    x: MARGIN_X + labelW + 4,
-    y: y - 11,
-    font: ctx.bold,
-    size: VALUE_FONT_SIZE,
-  })
-
-  y -= diagnosisHeight
-
-  const findingsHeight = 48
-
-  ctx.page.drawRectangle({
-    x: MARGIN_X,
-    y: y - findingsHeight,
-    width: labelW,
-    height: findingsHeight,
-    borderColor: rgb(0, 0, 0),
-    borderWidth: 0.25,
-  })
-
-  ctx.page.drawRectangle({
-    x: MARGIN_X + labelW,
-    y: y - findingsHeight,
-    width: valueW,
-    height: findingsHeight,
-    borderColor: rgb(0, 0, 0),
-    borderWidth: 0.25,
-  })
-
-  drawCenteredText(ctx.page, 'Describa sus', MARGIN_X + labelW / 2, y - 15, ctx.bold, LABEL_FONT_SIZE)
-  drawCenteredText(ctx.page, 'hallazgos', MARGIN_X + labelW / 2, y - 23, ctx.bold, LABEL_FONT_SIZE)
-
-  drawWrappedText(ctx.page, nvl(data.hallazgos), {
-    x: MARGIN_X + labelW + 4,
-    y: y - 10,
-    width: valueW - 8,
-    maxLines: 5,
-    lineHeight: 7,
-    font: ctx.bold,
-    size: 5.8,
-  })
-
-  return y - findingsHeight
-}
-
-function drawProcedures(ctx: Ctx, y: number, data: AphFull): number {
-  const height = 15
-  const value = data.procedimientos?.join(', ') || ''
-
-  ctx.page.drawRectangle({
-    x: MARGIN_X,
-    y: y - height,
-    width: CONTENT_WIDTH,
-    height: height,
-    borderColor: rgb(0, 0, 0),
-    borderWidth: 0.25,
-  })
-
-  drawCenteredText(ctx.page, truncate(value, Math.floor(CONTENT_WIDTH / 3)), PAGE_WIDTH / 2, y - 10, ctx.bold, VALUE_FONT_SIZE)
-
-  return y - height
-}
-
-function drawMaterials(ctx: Ctx, y: number, data: AphData): number {
-  const height = 15
-  const value = nvl(data.materiales)
-
-  ctx.page.drawRectangle({
-    x: MARGIN_X,
-    y: y - height,
-    width: CONTENT_WIDTH,
-    height: height,
-    borderColor: rgb(0, 0, 0),
-    borderWidth: 0.25,
-  })
-
-  drawCenteredText(ctx.page, truncate(value, Math.floor(CONTENT_WIDTH / 3)), PAGE_WIDTH / 2, y - 10, ctx.bold, VALUE_FONT_SIZE)
-
-  return y - height
-}
-
-function drawSignatures(ctx: Ctx, y: number, data: AphData): number {
-  const colW = CONTENT_WIDTH / 3
-
-  y = tableRow(ctx, y, [
-    cell('Conductor', joinPersonDoc(data.conductor, data.documentoConductor), 1),
-    cell('Encargado del Traslado', joinPersonDoc(data.paramedico, data.documentoParamedico), 1),
-    cell('Quien recibe al paciente', joinPersonDoc(data.medico, data.documentoMedico), 1),
-  ])
-
-  const signatureHeight = 58
-
-  for (let i = 0; i < 3; i++) {
-    ctx.page.drawRectangle({
-      x: MARGIN_X + i * colW,
-      y: y - signatureHeight,
-      width: colW,
-      height: signatureHeight,
-      borderColor: rgb(0, 0, 0),
-      borderWidth: 0.25,
-    })
-  }
-
-  drawCenteredText(ctx.page, 'Firma  /  Paciente o Responsable', MARGIN_X + colW / 2, y - 12, ctx.bold, LABEL_FONT_SIZE)
-  drawCenteredText(ctx.page, 'Firma  /  Sello Encargado del Traslado', MARGIN_X + colW + colW / 2, y - 12, ctx.bold, LABEL_FONT_SIZE)
-  drawCenteredText(ctx.page, 'Firma  /  Sello Quien recibe al paciente', MARGIN_X + colW * 2 + colW / 2, y - 12, ctx.bold, LABEL_FONT_SIZE)
-
-  return y - signatureHeight
-}
-
-function drawFooter(ctx: Ctx): void {
-  const footerY = 24
-  const height = 21
-
-  ctx.page.drawRectangle({
-    x: MARGIN_X,
-    y: footerY - height,
-    width: CONTENT_WIDTH,
-    height,
-    borderColor: rgb(0, 0, 0),
-    borderWidth: 0.25,
-  })
-
-  ctx.page.drawText(
-      'El profesional de la salud certifica que las lesiones en el presente documento corresponden a hallazgos clÃ­nicos ocurridos como consecuencia de accidente de transito.',
-      {
-        x: MARGIN_X + 4,
-        y: footerY - 8,
-        font: ctx.normal,
-        size: 5.8,
-      },
-  )
-
-  ctx.page.drawText('ArtÃ­culo 32 Decreto 056 de 2015 Ministerio de Salud y ProtecciÃ³n Social', {
-    x: MARGIN_X + 4,
-    y: footerY - 16,
+  drawWrappedText(ctx, listValues(data.lesiones), {
+    x: textX,
+    y: y - 44,
+    width: width - imageW - 28,
+    height: 34,
+    lineHeight: 7.4,
     font: ctx.normal,
-    size: 5.8,
+    size: 6.3,
+    color: COLORS.slate,
+  })
+  drawText(ctx, 'Descripcion del evento', textX, y - 88, {
+    font: ctx.bold,
+    size: 7.2,
+    color: COLORS.blue,
+  })
+  drawWrappedText(ctx, firstValue(data.descripcionOtroEvento, data.causaExterna, 'Sin dato'), {
+    x: textX,
+    y: y - 101,
+    width: width - imageW - 28,
+    height: 34,
+    lineHeight: 7.4,
+    font: ctx.normal,
+    size: 6.3,
+    color: COLORS.slate,
   })
 }
 
-function tableRow(ctx: Ctx, y: number, cells: Cell[]): number {
-  const totalSpan = cells.reduce((sum, current) => sum + current.span, 0)
-  let x = MARGIN_X
+function drawNarrativePair(ctx: Ctx, data: AphFull, x: number, y: number, width: number, height: number): void {
+  drawSectionFrame(ctx, x, y, width, height, 'Hallazgos y diagnostico')
 
-  for (const currentCell of cells) {
-    const width = (CONTENT_WIDTH * currentCell.span) / totalSpan
+  const gap = 8
+  const boxY = y - 22
+  const boxH = height - 30
+  const leftW = 205
+  const rightW = width - leftW - gap - 16
 
-    drawCenteredText(ctx.page, currentCell.label, x + width / 2, y - 5.6, ctx.bold, LABEL_FONT_SIZE)
-
-    const valueBoxY = y - LABEL_HEIGHT - LABEL_VALUE_GAP - VALUE_HEIGHT
-    const value = truncate(currentCell.value, Math.floor((width - 6) / (VALUE_FONT_SIZE * 0.5)))
-
-    ctx.page.drawRectangle({
-      x: x + 1,
-      y: valueBoxY,
-      width: width - 2,
-      height: VALUE_HEIGHT,
-      borderColor: rgb(0, 0, 0),
-      borderWidth: 0.25,
-    })
-
-    drawCenteredText(ctx.page, value, x + width / 2, valueBoxY + 3.2, ctx.normal, VALUE_FONT_SIZE)
-
-    x += width
-  }
-
-  return y - ROW_HEIGHT
+  drawTextBox(ctx, x + 8, boxY, leftW, boxH, 'Diagnostico / motivo de consulta', firstValue(data.diagnosticos, data.descripcionOtroEvento))
+  drawTextBox(ctx, x + 8 + leftW + gap, boxY, rightW, boxH, 'Hallazgos clinicos', data.hallazgos)
 }
 
-function inlineRow(ctx: Ctx, y: number, cells: InlineCell[]): number {
-  const rowHeight = 17
-  const width = CONTENT_WIDTH / cells.length
-  let x = MARGIN_X
+function drawCareAndAdmin(ctx: Ctx, data: AphFull, x: number, y: number, width: number, height: number): void {
+  drawSectionFrame(ctx, x, y, width, height, 'Procedimientos, materiales y datos administrativos')
 
-  for (const currentCell of cells) {
+  const gap = 8
+  const boxY = y - 22
+  const boxH = height - 30
+  const procW = 158
+  const materialW = 160
+  const adminW = width - procW - materialW - gap * 2 - 16
+
+  drawTextBox(ctx, x + 8, boxY, procW, boxH, 'Procedimientos', listValues(data.procedimientos))
+  drawTextBox(ctx, x + 8 + procW + gap, boxY, materialW, boxH, 'Materiales y drogas', nvl(data.materiales))
+  drawTextBox(
+      ctx,
+      x + 8 + procW + gap + materialW + gap,
+      boxY,
+      adminW,
+      boxH,
+      'SOAT / administracion',
+      joinValues(
+          [
+            labelValue('Traslado', firstValue(data.traslado, data.tipoTraslado)),
+            labelValue('Servicio', data.tipoServicioTransporte),
+            labelValue('Vehiculo', joinValues([data.placaVehiculo, data.tipoVehiculo])),
+            labelValue('SIRAS', data.numeroRadicadoSiras),
+            labelValue('Propietario', fullOwnerName(data)),
+            labelValue('Cond. vehiculo', fullVehicleDriverName(data)),
+          ],
+          ' | ',
+      ),
+  )
+}
+
+function drawCrewAndSignatures(ctx: Ctx, data: AphFull, x: number, y: number, width: number, height: number): void {
+  drawSectionFrame(ctx, x, y, width, height, 'Tripulacion, recepcion y firmas')
+
+  const colW = (width - 16) / 3
+  const topY = y - 22
+  const crew = [
+    { role: 'Conductor', value: joinPersonDoc(data.conductor, data.documentoConductor), label: 'Firma conductor / responsable' },
+    { role: 'Encargado del traslado', value: joinPersonDoc(data.paramedico, data.documentoParamedico), label: 'Firma / sello traslado' },
+    { role: 'Recibe paciente', value: joinPersonDoc(data.medico, data.documentoMedico), label: 'Firma / sello recibe' },
+  ]
+
+  crew.forEach((item, index) => {
+    const cellX = x + 8 + index * colW
     ctx.page.drawRectangle({
-      x,
-      y: y - rowHeight,
-      width,
-      height: rowHeight,
-      borderColor: rgb(0, 0, 0),
-      borderWidth: 0.25,
+      x: cellX,
+      y: y - height + 8,
+      width: colW,
+      height: height - 30,
+      color: index % 2 === 0 ? COLORS.white : COLORS.fill,
+      borderColor: COLORS.border,
+      borderWidth: 0.45,
     })
-
-    ctx.page.drawText(currentCell.label, {
-      x: x + 5,
-      y: y - 11,
+    drawText(ctx, item.role.toUpperCase(), cellX + 7, topY - 9, {
       font: ctx.bold,
-      size: LABEL_FONT_SIZE,
+      size: 5.8,
+      color: COLORS.muted,
+      maxWidth: colW - 14,
     })
-
-    ctx.page.drawText(truncate(currentCell.value, Math.floor((width - 180) / 3)), {
-      x: x + 175,
-      y: y - 11,
-      font: ctx.normal,
-      size: VALUE_FONT_SIZE,
+    drawText(ctx, item.value || 'Sin dato', cellX + 7, topY - 21, {
+      font: ctx.bold,
+      size: 7,
+      color: COLORS.slate,
+      maxWidth: colW - 14,
     })
+    ctx.page.drawLine({
+      start: { x: cellX + 20, y: y - height + 25 },
+      end: { x: cellX + colW - 20, y: y - height + 25 },
+      thickness: 0.45,
+      color: COLORS.muted,
+    })
+    drawCenteredText(ctx, item.label, cellX + colW / 2, y - height + 13, ctx.bold, 5.8, COLORS.slate)
+  })
+}
 
-    x += width
+function drawFooter(ctx: Ctx, data: AphFull): void {
+  const legal =
+    'El profesional de la salud certifica que las lesiones registradas corresponden a los hallazgos clinicos documentados durante la atencion prehospitalaria. Articulo 32 Decreto 056 de 2015, Ministerio de Salud y Proteccion Social.'
+
+  drawWrappedText(ctx, legal, {
+    x: MARGIN,
+    y: 20,
+    width: CONTENT_WIDTH - 170,
+    height: 12,
+    lineHeight: 6,
+    font: ctx.normal,
+    size: 5.2,
+    color: COLORS.muted,
+  })
+  drawText(ctx, joinValues([firstValue(data.codigo, 'APH'), 'Pagina 1 de 1'], ' - '), PAGE_WIDTH - MARGIN - 142, 14, {
+    font: ctx.bold,
+    size: 6,
+    color: COLORS.muted,
+    maxWidth: 138,
+  })
+}
+
+function drawSectionFrame(ctx: Ctx, x: number, y: number, width: number, height: number, title: string): void {
+  ctx.page.drawRectangle({
+    x,
+    y: y - height,
+    width,
+    height,
+    color: COLORS.white,
+    borderColor: COLORS.border,
+    borderWidth: 0.55,
+  })
+  ctx.page.drawRectangle({
+    x,
+    y: y - 17,
+    width,
+    height: 17,
+    color: COLORS.tint,
+    borderColor: rgb(0.72, 0.86, 0.95),
+    borderWidth: 0.35,
+  })
+  ctx.page.drawRectangle({
+    x,
+    y: y - 17,
+    width: 4,
+    height: 17,
+    color: COLORS.cyan,
+  })
+  drawText(ctx, title.toUpperCase(), x + 10, y - 11.5, {
+    font: ctx.bold,
+    size: 7.3,
+    color: COLORS.blue,
+    maxWidth: width - 18,
+  })
+}
+
+function drawSubHeader(ctx: Ctx, x: number, y: number, width: number, height: number, title: string): void {
+  ctx.page.drawRectangle({
+    x,
+    y: y - height,
+    width,
+    height,
+    color: COLORS.fill,
+    borderColor: COLORS.divider,
+    borderWidth: 0.45,
+  })
+  drawText(ctx, title.toUpperCase(), x + 5, y - 10, {
+    font: ctx.bold,
+    size: 5.8,
+    color: COLORS.blue,
+    maxWidth: width - 10,
+  })
+}
+
+function drawKeyGrid(
+    ctx: Ctx,
+    options: {
+      x: number
+      y: number
+      width: number
+      cells: KeyValue[]
+      columns: number
+      rowHeight: number
+      gap: number
+    },
+): void {
+  const colWidth = (options.width - options.gap * (options.columns - 1)) / options.columns
+  let x = options.x
+  let y = options.y
+  let used = 0
+
+  for (const cell of options.cells) {
+    const span = Math.min(cell.span || 1, options.columns)
+
+    if (used + span > options.columns) {
+      x = options.x
+      y -= options.rowHeight + options.gap
+      used = 0
+    }
+
+    const width = colWidth * span + options.gap * (span - 1)
+    drawKeyCell(ctx, x, y, width, options.rowHeight, cell)
+
+    x += width + options.gap
+    used += span
+  }
+}
+
+function drawKeyCell(ctx: Ctx, x: number, y: number, width: number, height: number, cell: KeyValue): void {
+  ctx.page.drawRectangle({
+    x,
+    y: y - height,
+    width,
+    height,
+    color: cell.emphasis ? rgb(0.95, 0.99, 1) : COLORS.white,
+    borderColor: cell.emphasis ? rgb(0.57, 0.77, 0.9) : COLORS.divider,
+    borderWidth: cell.emphasis ? 0.55 : 0.4,
+  })
+  drawText(ctx, cell.label.toUpperCase(), x + 5, y - 6.8, {
+    font: ctx.bold,
+    size: 4.5,
+    color: COLORS.muted,
+    maxWidth: width - 10,
+  })
+  drawText(ctx, cell.value || 'Sin dato', x + 5, y - height + 3.6, {
+    font: cell.emphasis ? ctx.bold : ctx.normal,
+    size: cell.emphasis ? 6.1 : 5.8,
+    color: COLORS.slate,
+    maxWidth: width - 10,
+  })
+}
+
+function drawTextBox(ctx: Ctx, x: number, y: number, width: number, height: number, title: string, value: string): void {
+  ctx.page.drawRectangle({
+    x,
+    y: y - height,
+    width,
+    height,
+    color: COLORS.white,
+    borderColor: COLORS.divider,
+    borderWidth: 0.45,
+  })
+  ctx.page.drawRectangle({
+    x,
+    y: y - 15,
+    width,
+    height: 15,
+    color: COLORS.fill,
+    borderColor: COLORS.divider,
+    borderWidth: 0.35,
+  })
+  drawText(ctx, title.toUpperCase(), x + 6, y - 10, {
+    font: ctx.bold,
+    size: 5.9,
+    color: COLORS.blue,
+    maxWidth: width - 12,
+  })
+  drawWrappedText(ctx, value || 'Sin dato', {
+    x: x + 7,
+    y: y - 25,
+    width: width - 14,
+    height: height - 24,
+    lineHeight: 7.4,
+    font: ctx.normal,
+    size: 6.3,
+    color: COLORS.slate,
+  })
+}
+
+function drawLogo(ctx: Ctx, logo: PDFImage | null, x: number, y: number, width: number, height: number): void {
+  ctx.page.drawRectangle({
+    x,
+    y,
+    width,
+    height,
+    color: COLORS.white,
+    borderColor: rgb(0.66, 0.82, 0.91),
+    borderWidth: 0.55,
+  })
+
+  if (logo) {
+    drawImageContained(ctx.page, logo, {
+      x,
+      y,
+      width,
+      height,
+      paddingX: 3,
+      paddingY: 3,
+    })
+    return
   }
 
-  return y - rowHeight
+  drawCenteredText(ctx, 'SM', x + width / 2, y + height / 2 - 4, ctx.bold, 10, COLORS.blue)
+}
+
+function drawMissingBodyMap(ctx: Ctx, x: number, y: number, width: number, height: number): void {
+  drawCenteredText(ctx, 'Mapa corporal', x + width / 2, y + height / 2 + 4, ctx.bold, 7, COLORS.muted)
+  drawCenteredText(ctx, 'no disponible', x + width / 2, y + height / 2 - 6, ctx.normal, 6, COLORS.muted)
+}
+
+async function resolveLogo(doc: PDFDocument, logoBase64?: string): Promise<PDFImage | null> {
+  if (!logoBase64) {
+    return null
+  }
+
+  try {
+    const logoBytes = base64ToBytes(removeBase64Prefix(logoBase64))
+    return embedImage(doc, logoBytes, logoBase64)
+  } catch {
+    return null
+  }
 }
 
 async function embedBase64Image(doc: PDFDocument, base64Image: string): Promise<PDFImage> {
@@ -574,7 +707,13 @@ async function embedBase64Image(doc: PDFDocument, base64Image: string): Promise<
 }
 
 async function embedImage(doc: PDFDocument, bytes: Uint8Array, source: string): Promise<PDFImage> {
-  if (source.startsWith('data:image/jpeg') || source.startsWith('data:image/jpg')) {
+  const lowerSource = source.toLowerCase()
+  const isJpg =
+    lowerSource.startsWith('data:image/jpeg') ||
+    lowerSource.startsWith('data:image/jpg') ||
+    (bytes[0] === 0xff && bytes[1] === 0xd8)
+
+  if (isJpg) {
     return doc.embedJpg(bytes)
   }
 
@@ -602,7 +741,6 @@ function drawImageContained(
 
   const imageRatio = image.width / image.height
   const boxRatio = availableWidth / availableHeight
-
   let drawWidth = availableWidth
   let drawHeight = availableHeight
 
@@ -612,44 +750,58 @@ function drawImageContained(
     drawWidth = drawHeight * imageRatio
   }
 
-  const imageX = box.x + (box.width - drawWidth) / 2
-  const imageY = box.y + (box.height - drawHeight) / 2
-
   page.drawImage(image, {
-    x: imageX,
-    y: imageY,
+    x: box.x + (box.width - drawWidth) / 2,
+    y: box.y + (box.height - drawHeight) / 2,
     width: drawWidth,
     height: drawHeight,
   })
 }
 
+function drawText(ctx: Ctx, text: string, x: number, y: number, options: TextOptions = {}): void {
+  const font = options.font || ctx.normal
+  const size = options.size || 7
+  const safeText = options.maxWidth ? fitText(text, options.maxWidth, font, size) : cleanText(text)
+
+  ctx.page.drawText(safeText, {
+    x,
+    y,
+    font,
+    size,
+    color: options.color || COLORS.slate,
+  })
+}
+
 function drawWrappedText(
-    page: PDFPage,
+    ctx: Ctx,
     value: string,
     options: {
       x: number
       y: number
       width: number
-      maxLines: number
+      height: number
       lineHeight: number
       font: PDFFont
       size: number
+      color: ReturnType<typeof rgb>
     },
 ): void {
-  const lines = wrapText(value, options.width, options.font, options.size)
+  const maxLines = Math.max(1, Math.floor(options.height / options.lineHeight))
+  const lines = wrapText(value, options.width, options.font, options.size, maxLines)
 
-  lines.slice(0, options.maxLines).forEach((line, index) => {
-    page.drawText(line, {
+  lines.forEach((line, index) => {
+    ctx.page.drawText(line, {
       x: options.x,
       y: options.y - index * options.lineHeight,
       font: options.font,
       size: options.size,
+      color: options.color,
     })
   })
 }
 
-function wrapText(value: string, width: number, font: PDFFont, size: number): string[] {
-  const text = nvl(value)
+function wrapText(value: string, width: number, font: PDFFont, size: number, maxLines: number): string[] {
+  const text = cleanText(value)
 
   if (!text) {
     return ['']
@@ -658,73 +810,193 @@ function wrapText(value: string, width: number, font: PDFFont, size: number): st
   const words = text.split(/\s+/)
   const lines: string[] = []
   let current = ''
+  let consumed = 0
 
   for (const word of words) {
     const candidate = current ? `${current} ${word}` : word
 
     if (measureWidth(candidate, font, size) <= width) {
       current = candidate
-    } else {
-      if (current) {
-        lines.push(current)
-      }
+      consumed += 1
+      continue
+    }
 
+    if (current) {
+      lines.push(current)
+      current = ''
+    }
+
+    if (measureWidth(word, font, size) > width) {
+      lines.push(fitText(word, width, font, size))
+      consumed += 1
+    } else {
       current = word
+      consumed += 1
+    }
+
+    if (lines.length === maxLines) {
+      break
     }
   }
 
-  if (current) {
+  if (current && lines.length < maxLines) {
     lines.push(current)
   }
 
-  return lines
+  if (consumed < words.length && lines.length > 0) {
+    lines[lines.length - 1] = fitText(`${lines[lines.length - 1]}...`, width, font, size)
+  }
+
+  return lines.slice(0, maxLines)
 }
 
 function drawCenteredText(
-    page: PDFPage,
+    ctx: Ctx,
     text: string,
     centerX: number,
     y: number,
     font: PDFFont,
     size: number,
+    color = COLORS.slate,
 ): void {
-  const safeText = nvl(text)
-  page.drawText(safeText, {
+  const safeText = cleanText(text)
+
+  ctx.page.drawText(safeText, {
     x: centerX - measureWidth(safeText, font, size) / 2,
     y,
     font,
     size,
+    color,
   })
 }
 
-function cell(label: string, value: string, span: number): Cell {
+function fitText(value: string, maxWidth: number, font: PDFFont, size: number): string {
+  const text = cleanText(value)
+
+  if (!text || measureWidth(text, font, size) <= maxWidth) {
+    return text
+  }
+
+  const suffix = '...'
+  let end = text.length
+
+  while (end > 0 && measureWidth(`${text.slice(0, end)}${suffix}`, font, size) > maxWidth) {
+    end -= 1
+  }
+
+  return `${text.slice(0, Math.max(0, end)).trimEnd()}${suffix}`
+}
+
+function kv(label: string, value: string | null | undefined, span = 1, emphasis = false): KeyValue {
   return {
     label,
-    value,
+    value: nvl(value),
     span,
+    emphasis,
   }
+}
+
+function buildSampleHistory(data: AphFull): string {
+  return joinValues(
+      [
+        labelValue('Alergias', data.alergia),
+        labelValue('Liquidos', data.liquidos),
+        labelValue('Medicacion', data.medicacion),
+        labelValue('Patologicos', data.patologicos),
+      ],
+      ' | ',
+  )
+}
+
+function labelValue(label: string, value: string | null | undefined): string {
+  return `${label}: ${nvl(value) || 'Sin dato'}`
+}
+
+function fullName(data: AphFull): string {
+  return joinValues([data.primerNombre, data.segundoNombre, data.primerApellido, data.segundoApellido])
+}
+
+function fullOwnerName(data: AphFull): string {
+  return joinValues([
+    data.primerNombrePropietario,
+    data.segundoNombrePropietario,
+    data.primerApellidoPropietario,
+    data.segundoApellidoPropietario,
+  ])
+}
+
+function fullVehicleDriverName(data: AphFull): string {
+  return joinValues([
+    data.primerNombreConductorVehiculo,
+    data.segundoNombreConductorVehiculo,
+    data.primerApellidoConductorVehiculo,
+    data.segundoApellidoConductorVehiculo,
+  ])
 }
 
 function joinPersonDoc(name: string, doc: string): string {
-  return [nvl(name), nvl(doc)].filter(Boolean).join(' ')
+  return joinValues([name, doc])
 }
 
-function fullName(data: AphData): string {
-  return [nvl(data.primerNombre), nvl(data.primerApellido)].filter(Boolean).join(' ')
+function joinLocation(department: string, city: string): string {
+  return joinValues([department, city], ' / ')
 }
 
-function truncate(value: string, max: number): string {
-  const safeValue = nvl(value)
+function joinValues(values: Array<string | null | undefined>, separator = ' '): string {
+  return values.map(nvl).filter(Boolean).join(separator)
+}
 
-  if (safeValue.length <= max) {
-    return safeValue
+function firstValue(...values: Array<string | number | null | undefined>): string {
+  for (const value of values) {
+    const text = typeof value === 'number' ? String(value) : nvl(value)
+
+    if (text) {
+      return text
+    }
   }
 
-  return `${safeValue.slice(0, Math.max(0, max - 3))}...`
+  return ''
+}
+
+function listValues(values: string[] | null | undefined): string {
+  return values && values.length > 0 ? values.map(nvl).filter(Boolean).join(', ') : 'Sin dato'
+}
+
+function sumNumbers(values: Array<string | null | undefined>): string {
+  const numbers = values.map((value) => Number(value)).filter((value) => Number.isFinite(value))
+
+  if (numbers.length !== values.length) {
+    return ''
+  }
+
+  return String(numbers.reduce((sum, current) => sum + current, 0))
+}
+
+function priorityColor(priority: string): ReturnType<typeof rgb> {
+  const value = nvl(priority).toLowerCase()
+
+  if (value.includes('1') || value.includes('alta') || value.includes('rojo')) {
+    return COLORS.red
+  }
+
+  if (value.includes('2') || value.includes('media') || value.includes('amarillo')) {
+    return COLORS.amber
+  }
+
+  return COLORS.green
 }
 
 function nvl(value: string | null | undefined): string {
-  return value && value.trim() ? value : ''
+  return value && value.trim() ? value.trim() : ''
+}
+
+function cleanText(value: string): string {
+  return nvl(value)
+      .replace(/[\u2010-\u2015]/g, '-')
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201c\u201d]/g, '"')
+      .replace(/\u00a0/g, ' ')
+      .replace(/[^\u0009\u000a\u000d\u0020-\u007e\u00a0-\u00ff]/g, '')
 }
 
 function removeBase64Prefix(base64: string): string {
@@ -740,7 +1012,7 @@ function measureWidth(text: string, font: PDFFont, size: number): number {
 }
 
 function base64ToBytes(base64: string): Uint8Array {
-  const binary = atob(base64)
+  const binary = atob(base64.replace(/\s/g, ''))
   const bytes = new Uint8Array(binary.length)
 
   for (let i = 0; i < binary.length; i += 1) {

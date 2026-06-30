@@ -225,7 +225,6 @@ export const procedures = [
 
 export const requiredFieldsByTab: Record<number, (keyof AphForm)[]> = {
   0: [
-    'codigo',
     'movil',
     'traslado',
     'tipoTraslado',
