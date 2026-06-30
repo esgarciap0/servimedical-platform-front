@@ -440,7 +440,7 @@ export function Prehospitalizacion() {
   }
 
   const captureBodyMapImage = async (): Promise<string | null> => {
-    const element = document.getElementById('aph-body-visible')
+    const element = document.getElementById('aph-body-capture-core') || document.getElementById('aph-body-visible')
 
     if (!element) {
       console.warn('APH visible body element not found')
@@ -457,8 +457,8 @@ export function Prehospitalizacion() {
       // Font loading is not critical for the body image capture.
     }
 
-    const width = Math.max(element.scrollWidth, element.offsetWidth, 540)
-    const height = Math.max(element.scrollHeight, element.offsetHeight, 335)
+    const width = Math.max(element.scrollWidth, element.offsetWidth, 430)
+    const height = Math.max(element.scrollHeight, element.offsetHeight, 265)
 
     try {
       return await toPng(element, {
@@ -1931,6 +1931,7 @@ function InjuryCaptureForPdf({
               bgcolor: 'white',
               overflow: 'visible',
             }}
+            id="aph-body-capture-core"
         >
           <AnatomicalBodySelector
               selected={selected}
