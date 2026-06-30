@@ -1,4 +1,4 @@
-import type { AphForm, AphSortKey } from '../../types/aph'
+﻿import type { AphForm, AphSortKey } from '../../types/aph'
 import type { Slug } from 'react-muscle-highlighter'
 
 export const tabs = [
@@ -225,7 +225,6 @@ export const procedures = [
 
 export const requiredFieldsByTab: Record<number, (keyof AphForm)[]> = {
   0: [
-    'codigo',
     'movil',
     'traslado',
     'tipoTraslado',

@@ -1,11 +1,11 @@
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance'
+﻿import AccountBalanceIcon from '@mui/icons-material/AccountBalance'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import AnalyticsIcon from '@mui/icons-material/Analytics'
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn'
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital'
+import LocalShippingIcon from '@mui/icons-material/LocalShipping'
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices'
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
-import AirportShuttleIcon from '@mui/icons-material/AirportShuttle'
 import type { SvgIconComponent } from '@mui/icons-material'
 
 export type ModuleItem = {
@@ -31,8 +31,8 @@ export const modules: ModuleItem[] = [
   {
     name: 'Ambulancias',
     path: '/ambulancias',
-    description: 'Gestion de moviles, conductores y parametros de traslado.',
-    icon: AirportShuttleIcon,
+    description: 'Registro y gestion de ambulancias, moviles y tripulacion.',
+    icon: LocalShippingIcon,
   },
   {
     name: 'Hospitalizacion',

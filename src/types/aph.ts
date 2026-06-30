@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tipos compartidos del módulo APH (Atención Prehospitalaria).
  *
  * - `AphForm`: campos editables en el formulario (todos string).
@@ -10,7 +10,6 @@
  */
 
 export type AphForm = {
-  codigo: string
   movil: string
   placa: string
   esAtencionInicialPacienteRemitidoOControl: string
@@ -126,6 +125,7 @@ export type AphPayload = AphForm & {
 
 export type AphResponse = AphPayload & {
   id: number
+  codigo: string
   createdAt: string
   updatedAt: string
 }

@@ -1,7 +1,6 @@
-import type { AphForm } from '../../types/aph'
+﻿import type { AphForm } from '../../types/aph'
 
 export const initialForm: AphForm = {
-  codigo: '',
   movil: '',
   placa: '',
   esAtencionInicialPacienteRemitidoOControl: '1',
