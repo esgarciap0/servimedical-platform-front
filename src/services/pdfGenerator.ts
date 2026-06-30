@@ -358,10 +358,10 @@ async function drawInjuryPanel(ctx: Ctx, data: AphFull, x: number, y: number, wi
         paddingY: 5,
       })
     } catch {
-      drawMissingBodyMap(ctx, imageX, imageY, imageW, imageH)
+      drawBodySilhouettes(ctx, imageX, imageY, imageW, imageH, data.lesiones)
     }
   } else {
-    drawMissingBodyMap(ctx, imageX, imageY, imageW, imageH)
+    drawBodySilhouettes(ctx, imageX, imageY, imageW, imageH, data.lesiones)
   }
 
   const textX = imageX + imageW + 10
@@ -682,9 +682,135 @@ function drawLogo(ctx: Ctx, logo: PDFImage | null, x: number, y: number, width: 
   drawCenteredText(ctx, 'SM', x + width / 2, y + height / 2 - 4, ctx.bold, 10, COLORS.blue)
 }
 
-function drawMissingBodyMap(ctx: Ctx, x: number, y: number, width: number, height: number): void {
-  drawCenteredText(ctx, 'Mapa corporal', x + width / 2, y + height / 2 + 4, ctx.bold, 7, COLORS.muted)
-  drawCenteredText(ctx, 'no disponible', x + width / 2, y + height / 2 - 6, ctx.normal, 6, COLORS.muted)
+function drawBodySilhouettes(
+  ctx: Ctx,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  lesiones: string[] | undefined,
+): void {
+  const halfW = width / 2
+  const figH = height * 0.80
+  const centerY = y + height / 2
+  const leftCX = x + halfW * 0.48
+  const rightCX = x + halfW * 1.52
+
+  drawOneSilhouette(ctx, leftCX, centerY, figH)
+  drawOneSilhouette(ctx, rightCX, centerY, figH)
+
+  // Labels at the bottom of each silhouette
+  drawCenteredText(ctx, 'FRONTAL', leftCX, y + 7, ctx.normal, 4.5, COLORS.muted)
+  drawCenteredText(ctx, 'DORSAL', rightCX, y + 7, ctx.normal, 4.5, COLORS.muted)
+
+  if (lesiones && lesiones.length > 0) {
+    paintLesionMarks(ctx, lesiones, leftCX, centerY, figH, true)
+    paintLesionMarks(ctx, lesiones, rightCX, centerY, figH, false)
+  }
+}
+
+function drawOneSilhouette(ctx: Ctx, cx: number, cy: number, h: number): void {
+  const page = ctx.page
+  const stroke = COLORS.muted
+  const fill = COLORS.white
+  const bw = 0.5
+
+  const headR = h * 0.09
+  const headCy = cy + h * 0.41
+
+  const neckW = h * 0.07
+  const neckH = h * 0.05
+  const neckY = headCy - headR - neckH
+
+  const torsoW = h * 0.26
+  const torsoH = h * 0.28
+  const torsoY = cy + h * 0.02
+
+  const armW = h * 0.08
+  const armH = h * 0.26
+  const armY = cy + h * 0.06
+
+  const legW = h * 0.10
+  const legH = h * 0.30
+  const legY = cy - h * 0.14
+
+  // Head
+  page.drawCircle({ x: cx, y: headCy, size: headR, borderColor: stroke, borderWidth: bw, color: fill })
+  // Neck
+  page.drawRectangle({ x: cx - neckW / 2, y: neckY, width: neckW, height: neckH, color: fill, borderColor: stroke, borderWidth: bw })
+  // Torso
+  page.drawRectangle({ x: cx - torsoW / 2, y: torsoY, width: torsoW, height: torsoH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
+  // Left arm
+  page.drawRectangle({ x: cx - torsoW / 2 - armW, y: armY, width: armW, height: armH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
+  // Right arm
+  page.drawRectangle({ x: cx + torsoW / 2, y: armY, width: armW, height: armH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
+  // Left leg
+  page.drawRectangle({ x: cx - legW - 1, y: legY - legH, width: legW, height: legH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
+  // Right leg
+  page.drawRectangle({ x: cx + 1, y: legY - legH, width: legW, height: legH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
+}
+
+function paintLesionMarks(
+  ctx: Ctx,
+  lesiones: string[],
+  cx: number,
+  cy: number,
+  h: number,
+  frontView: boolean,
+): void {
+  const page = ctx.page
+  for (const raw of lesiones) {
+    const norm = raw
+      .toUpperCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+
+    let side = 0
+    if (norm.includes('DERECH')) side = frontView ? 1 : -1
+    if (norm.includes('IZQUIERD')) side = frontView ? -1 : 1
+
+    // [offsetX as fraction of h, offsetY from cy as fraction of h, width, height]
+    let zone: [number, number, number, number] | null = null
+
+    if (norm.includes('CABEZA') || norm.includes('CRANEO') || norm.includes('FRONTAL') || norm.includes('CARA')) {
+      zone = [0, 0.38, 0.18, 0.16]
+    } else if (norm.includes('CUELLO') || norm.includes('CERVICAL')) {
+      zone = [0, 0.27, 0.10, 0.05]
+    } else if (norm.includes('HOMBRO')) {
+      zone = [side * 0.17, 0.24, 0.10, 0.06]
+    } else if (norm.includes('BRAZO') || norm.includes('HUMERO')) {
+      zone = [side * 0.22, 0.14, 0.08, 0.12]
+    } else if (norm.includes('ANTEBRAZO') || norm.includes('MUNECA') || norm.includes('MANO')) {
+      zone = [side * 0.22, -0.02, 0.08, 0.10]
+    } else if (norm.includes('TORAX') || norm.includes('TORACI') || norm.includes('HEMITORA') || norm.includes('COSTILLA') || norm.includes('PECHO')) {
+      zone = [side * 0.06, 0.17, 0.18, 0.10]
+    } else if (norm.includes('ABDOMEN') || norm.includes('VIENTRE')) {
+      zone = [side * 0.04, 0.05, 0.16, 0.08]
+    } else if (norm.includes('ESPALDA') || norm.includes('LUMBAR') || norm.includes('DORSAL')) {
+      zone = [side * 0.04, 0.10, 0.18, 0.14]
+    } else if (norm.includes('CADERA') || norm.includes('PELVIS')) {
+      zone = [side * 0.05, -0.08, 0.16, 0.07]
+    } else if (norm.includes('RODILLA')) {
+      zone = [side * 0.06, -0.27, 0.07, 0.05]
+    } else if (norm.includes('MUSLO') || norm.includes('FEMUR') || norm.includes('PIERNA')) {
+      zone = [side * 0.06, -0.18, 0.07, 0.10]
+    } else if (norm.includes('TOBILLO') || norm.includes('PIE')) {
+      zone = [side * 0.06, -0.40, 0.07, 0.05]
+    }
+
+    if (zone) {
+      const [ox, oy, zw, zh] = zone
+      page.drawRectangle({
+        x: cx + ox * h - (zw * h) / 2,
+        y: cy + oy * h - (zh * h) / 2,
+        width: zw * h,
+        height: zh * h,
+        color: COLORS.red,
+        opacity: 0.72,
+        borderRadius: 1.5,
+      })
+    }
+  }
 }
 
 async function resolveLogo(doc: PDFDocument, logoBase64?: string): Promise<PDFImage | null> {
