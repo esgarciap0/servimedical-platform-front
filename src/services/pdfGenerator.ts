@@ -705,17 +705,17 @@ function drawMuscleSilhouette(
   const ty = figBottom
 
   // Transform matrix [a, b, c, d, e, f]:
-  // Front: x' = x*scale + tx,  y' = -y*scale + SVG_H*scale + ty
-  //        → [scale, 0, 0, -scale, tx, SVG_H*scale + ty]
-  // Back (mirror X): x' = (SVG_W-x)*scale + tx = -x*scale + SVG_W*scale + tx
-  //        → [-scale, 0, 0, -scale, SVG_W*scale + tx, SVG_H*scale + ty]
+  // pdf-lib's drawSvgPath already applies Y-flip internally: SVG(sx,sy) → CTM(sx, −sy).
+  // Our CTM must NOT flip Y again — use d = +scale (not −scale).
+  // Front:  [scale,  0, 0, scale, cx−figW/2,       figBottom+figH]
+  // Mirror: [−scale, 0, 0, scale, cx+figW/2, figBottom+figH]  (horizontal flip about cx)
   const a = mirrored ? -scale : scale
   const e = mirrored ? SVG_W * scale + tx : tx
   const f = SVG_H * scale + ty
 
   page.pushOperators(
     pushGraphicsState(),
-    concatTransformationMatrix(a, 0, 0, -scale, e, f),
+    concatTransformationMatrix(a, 0, 0, scale, e, f),
   )
 
   for (const partData of Object.values(maleFront)) {
