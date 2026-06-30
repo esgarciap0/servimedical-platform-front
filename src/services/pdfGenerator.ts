@@ -1,4 +1,5 @@
-﻿import { PDFDocument, PDFImage, PDFPage, PDFFont, rgb, StandardFonts } from 'pdf-lib'
+import { PDFDocument, PDFImage, PDFPage, PDFFont, rgb, StandardFonts, pushGraphicsState, popGraphicsState, concatTransformationMatrix } from 'pdf-lib'
+import maleFront from './bodyMapPaths'
 import type { AphPayload, AphResponse } from '../types/aph'
 
 const PAGE_WIDTH = 595.28
@@ -20,6 +21,7 @@ const COLORS = {
   divider: rgb(0.9, 0.93, 0.96),
   fill: rgb(0.97, 0.98, 0.99),
   tint: rgb(0.92, 0.97, 1),
+  bodyDark: rgb(0.18, 0.18, 0.18),
   white: rgb(1, 1, 1),
 }
 
@@ -650,6 +652,9 @@ function drawLogo(ctx: Ctx, logo: PDFImage | null, x: number, y: number, width: 
   drawCenteredText(ctx, 'SM', x + width / 2, y + height / 2 - 4, ctx.bold, 10, COLORS.blue)
 }
 
+const SVG_W = 724
+const SVG_H = 1448
+
 function drawBodySilhouettes(
   ctx: Ctx,
   x: number,
@@ -664,8 +669,11 @@ function drawBodySilhouettes(
   const figH = height - 14
   const figBottom = y + 12
 
-  drawOneSilhouette(ctx, leftCX, figBottom, figH)
-  drawOneSilhouette(ctx, rightCX, figBottom, figH)
+  // Scale so the figure fills the column height; center horizontally
+  const scale = figH / SVG_H
+
+  drawMuscleSilhouette(ctx, leftCX, figBottom, scale, false)
+  drawMuscleSilhouette(ctx, rightCX, figBottom, scale, true)
 
   drawCenteredText(ctx, 'FRONTAL', leftCX, y + 5, ctx.normal, 4.5, COLORS.muted)
   drawCenteredText(ctx, 'DORSAL', rightCX, y + 5, ctx.normal, 4.5, COLORS.muted)
@@ -676,48 +684,52 @@ function drawBodySilhouettes(
   }
 }
 
-function drawOneSilhouette(ctx: Ctx, cx: number, figBottom: number, figH: number): void {
+/**
+ * Draws one muscular body silhouette using the SVG paths from bodyMapPaths.ts.
+ * Applies a flip-Y transform so SVG (Y-down) maps correctly to PDF (Y-up).
+ * When mirrored=true the figure is also flipped horizontally for the dorsal view.
+ */
+function drawMuscleSilhouette(
+  ctx: Ctx,
+  cx: number,
+  figBottom: number,
+  scale: number,
+  mirrored: boolean,
+): void {
   const page = ctx.page
-  const stroke = COLORS.muted
-  const fill = COLORS.white
-  const bw = 0.75
+  const figW = SVG_W * scale
 
-  const headR    = figH * 0.08
-  const headCY   = figBottom + figH * 0.92
+  // tx: translate so SVG x=0 lands at (cx - figW/2)
+  const tx = cx - figW / 2
+  // ty: translate so SVG y=SVG_H (bottom of SVG) lands at figBottom
+  const ty = figBottom
 
-  const neckW    = figH * 0.08
-  const neckBotY = headCY - headR          // bottom of neck = bottom of head
-  const neckH    = figH * 0.06
+  // Transform matrix [a, b, c, d, e, f]:
+  // Front: x' = x*scale + tx,  y' = -y*scale + SVG_H*scale + ty
+  //        → [scale, 0, 0, -scale, tx, SVG_H*scale + ty]
+  // Back (mirror X): x' = (SVG_W-x)*scale + tx = -x*scale + SVG_W*scale + tx
+  //        → [-scale, 0, 0, -scale, SVG_W*scale + tx, SVG_H*scale + ty]
+  const a = mirrored ? -scale : scale
+  const e = mirrored ? SVG_W * scale + tx : tx
+  const f = SVG_H * scale + ty
 
-  const sBarW    = figH * 0.42             // shoulder bar spans arms
-  const sBarH    = figH * 0.06
-  const sBarBotY = neckBotY - neckH        // shoulder bar sits below neck
+  page.pushOperators(
+    pushGraphicsState(),
+    concatTransformationMatrix(a, 0, 0, -scale, e, f),
+  )
 
-  const torsoW   = figH * 0.28
-  const torsoH   = figH * 0.30
-  const torsoBotY = sBarBotY - torsoH
+  for (const partData of Object.values(maleFront)) {
+    const paths: string[] = [
+      ...(partData.common ?? []),
+      ...(partData.left ?? []),
+      ...(partData.right ?? []),
+    ]
+    for (const pathStr of paths) {
+      page.drawSvgPath(pathStr, { color: COLORS.bodyDark })
+    }
+  }
 
-  const armW     = figH * 0.08
-  const armH     = figH * 0.40            // arms from shoulder to pelvis level
-  const armBotY  = sBarBotY - armH
-
-  const pelvisW  = figH * 0.30
-  const pelvisH  = figH * 0.10
-  const pelvisBotY = torsoBotY - pelvisH
-
-  const legW     = figH * 0.11
-  const legH     = pelvisBotY - figBottom  // legs fill to pelvis bottom
-  const legBotY  = figBottom
-
-  page.drawCircle({ x: cx, y: headCY, size: headR, borderColor: stroke, borderWidth: bw, color: fill })
-  page.drawRectangle({ x: cx - neckW / 2, y: neckBotY, width: neckW, height: neckH, color: fill, borderColor: stroke, borderWidth: bw })
-  page.drawRectangle({ x: cx - sBarW / 2, y: sBarBotY, width: sBarW, height: sBarH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 1 })
-  page.drawRectangle({ x: cx - torsoW / 2, y: torsoBotY, width: torsoW, height: torsoH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 1 })
-  page.drawRectangle({ x: cx - sBarW / 2, y: armBotY, width: armW, height: armH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
-  page.drawRectangle({ x: cx + sBarW / 2 - armW, y: armBotY, width: armW, height: armH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
-  page.drawRectangle({ x: cx - pelvisW / 2, y: pelvisBotY, width: pelvisW, height: pelvisH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 1 })
-  page.drawRectangle({ x: cx - pelvisW / 2, y: legBotY, width: legW, height: legH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
-  page.drawRectangle({ x: cx + pelvisW / 2 - legW, y: legBotY, width: legW, height: legH, color: fill, borderColor: stroke, borderWidth: bw, borderRadius: 2 })
+  page.pushOperators(popGraphicsState())
 }
 
 function paintLesionMarks(
@@ -777,7 +789,6 @@ function paintLesionMarks(
         height: zh * figH,
         color: COLORS.red,
         opacity: 0.75,
-        borderRadius: 1.5,
       })
     }
   }
