@@ -38,12 +38,9 @@ import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-dat
 import Body, { type ExtendedBodyPart } from 'react-muscle-highlighter'
 import logo from '../assets/app-256.png'
 import { aphService } from '../services/aphService'
-import { ambulanciaService } from '../services/ambulanciaService'
 import { ApiError } from '../services/api'
 import { generateFurExcel } from '../services/furGenerator'
-import { generatePdf } from '../services/pdfGenerator'
 import type { AphForm, AphResponse, AphSortKey, SortOrder } from '../types/aph'
-import type { AmbulanciaResponse } from '../types/ambulancia'
 import {
   actionButtonSx,
   atencionInicialOptions,
@@ -98,7 +95,6 @@ export function Prehospitalizacion() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({})
   const [snackbar, setSnackbar] = useState<{ message: string; fields: string[]; severity: 'error' | 'success' } | null>(null)
-  const [ambulancias, setAmbulancias] = useState<AmbulanciaResponse[]>([])
 
   const filteredRows = useMemo(() => {
     const query = searchTerm.trim().toLowerCase()
@@ -154,7 +150,7 @@ export function Prehospitalizacion() {
     {
       field: 'acciones',
       headerName: 'Acciones',
-      width: 220,
+      width: 180,
       sortable: false,
       filterable: false,
       pinnable: false,
@@ -179,19 +175,10 @@ export function Prehospitalizacion() {
                 <EditIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Descargar PDF nuevo">
+            <Tooltip title="Descargar PDF">
               <IconButton
                   size="small"
-                  onClick={() => handleDownloadNewPdf(params.row.id)}
-                  sx={{ ...actionButtonSx, color: '#0f766e', bgcolor: '#ecfdf5', '&:hover': { bgcolor: '#d1fae5' } }}
-              >
-                <FileDownloadIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Descargar PDF viejo">
-              <IconButton
-                  size="small"
-                  onClick={() => handleDownloadOldPdf(params.row.id)}
+                  onClick={() => handleDownloadPdf(params.row.id)}
                   sx={{ ...actionButtonSx, color: '#dc3545', bgcolor: '#fff1f2', '&:hover': { bgcolor: '#ffe4e6' } }}
               >
                 <PictureAsPdfIcon fontSize="small" />
@@ -230,11 +217,6 @@ export function Prehospitalizacion() {
         if (error instanceof DOMException && error.name === 'AbortError') return
         setRows([])
       })
-
-    ambulanciaService
-      .list(controller.signal)
-      .then(setAmbulancias)
-      .catch(() => {})
 
     return () => controller.abort()
   }, [])
@@ -589,29 +571,12 @@ export function Prehospitalizacion() {
     URL.revokeObjectURL(url)
   }
 
-  const handleDownloadOldPdf = async (id: number) => {
+  const handleDownloadPdf = async (id: number) => {
     try {
       const blob = await fetchPdfBlob(id)
-      downloadBlob(blob, `APH-${id}-viejo.pdf`)
+      downloadBlob(blob, `APH-${id}.pdf`)
     } catch {
-      setSnackbar({ message: 'Error al descargar PDF viejo', fields: [], severity: 'error' })
-    }
-  }
-
-  const handleDownloadNewPdf = async (id: number) => {
-    try {
-      const aph = await aphService.getById(id)
-      const logoBase64 = await imageUrlToBase64(logo)
-      const bytes = await generatePdf(aph, logoBase64)
-      const buffer = new ArrayBuffer(bytes.byteLength)
-
-      new Uint8Array(buffer).set(bytes)
-
-      const blob = new Blob([buffer], { type: 'application/pdf' })
-
-      downloadBlob(blob, `APH-${id}-nuevo.pdf`)
-    } catch {
-      setSnackbar({ message: 'Error al descargar PDF nuevo', fields: [], severity: 'error' })
+      setSnackbar({ message: 'Error al descargar PDF', fields: [], severity: 'error' })
     }
   }
 
@@ -813,8 +778,7 @@ export function Prehospitalizacion() {
                             row={row}
                             onView={() => handleViewPdf(row.id)}
                             onEdit={() => handleEdit(row.id)}
-                            onDownloadNew={() => handleDownloadNewPdf(row.id)}
-                            onDownloadOld={() => handleDownloadOldPdf(row.id)}
+                            onDownload={() => handleDownloadPdf(row.id)}
                             onFur={() => handleGenerateFur(row.id)}
                         />
                     ))
@@ -1016,7 +980,7 @@ export function Prehospitalizacion() {
                     }}
                     elevation={0}
                 >
-                  {tab === 0 && <PatientTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} codigoAph={editId ? rows.find(r => r.id === editId)?.codigo || String(editId) : null} ambulancias={ambulancias} />}
+                  {tab === 0 && <PatientTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} />}
                   {tab === 1 && <InsuranceTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} />}
                   {tab === 2 && <CauseTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} />}
                   {tab === 3 && (
@@ -1115,7 +1079,7 @@ export function Prehospitalizacion() {
               </Box>
 
               <Box sx={{ display: 'none' }}>
-                <PdfPreview form={form} injuries={selectedInjuries} procedures={selectedProcedures} codigoAph={editId ? rows.find(r => r.id === editId)?.codigo || String(editId) : ''} />
+                <PdfPreview form={form} injuries={selectedInjuries} procedures={selectedProcedures} />
               </Box>
             </Box>
           </DialogContent>
@@ -1142,15 +1106,13 @@ function AphMobileCard({
                          row,
                          onView,
                          onEdit,
-                         onDownloadNew,
-                         onDownloadOld,
+                         onDownload,
                          onFur,
                        }: {
   row: AphResponse
   onView: () => void
   onEdit: () => void
-  onDownloadNew: () => void
-  onDownloadOld: () => void
+  onDownload: () => void
   onFur: () => void
 }) {
   return (
@@ -1175,18 +1137,15 @@ function AphMobileCard({
             <MobileInfo label="Destino" value={row.transportadoA || '-'} />
           </Box>
 
-          <Stack spacing={1}>
+          <Stack direction="row" spacing={1}>
             <Button fullWidth size="small" variant="contained" onClick={onView} sx={{ bgcolor: '#0d6efd', fontWeight: 800 }}>
               Ver
             </Button>
             <Button fullWidth size="small" variant="contained" onClick={onEdit} sx={{ bgcolor: '#f59e0b', fontWeight: 800 }}>
               Editar
             </Button>
-            <Button fullWidth size="small" variant="outlined" onClick={onDownloadNew} sx={{ fontWeight: 800, color: '#0f766e', borderColor: '#0f766e' }}>
-              PDF nuevo
-            </Button>
-            <Button fullWidth size="small" variant="outlined" color="error" onClick={onDownloadOld} sx={{ fontWeight: 800 }}>
-              PDF viejo
+            <Button fullWidth size="small" variant="outlined" color="error" onClick={onDownload} sx={{ fontWeight: 800 }}>
+              PDF
             </Button>
             <Button fullWidth size="small" variant="outlined" onClick={onFur} sx={{ fontWeight: 800, color: '#16a34a', borderColor: '#16a34a' }}>
               FUR
@@ -1210,45 +1169,13 @@ function MobileInfo({ label, value }: { label: string; value: string }) {
   )
 }
 
-async function imageUrlToBase64(url: string): Promise<string | undefined> {
-  try {
-    const response = await fetch(url)
-    const blob = await response.blob()
 
-    return await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-
-      reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : '')
-      reader.onerror = () => reject(reader.error)
-      reader.readAsDataURL(blob)
-    })
-  } catch {
-    return undefined
-  }
-}
-
-
-function PatientTab({ form, updateField, fieldErrors, devMode, codigoAph, ambulancias = [] }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean>; devMode?: boolean; codigoAph?: string | null; ambulancias?: AmbulanciaResponse[] }) {
-  const ambulanciaOptions = ambulancias.map((a) => a.movil)
-
-  const handleMovilChange = (value: string) => {
-    updateField('movil', value)
-    const match = ambulancias.find((a) => a.movil === value)
-    if (match) {
-      if (match.placa) updateField('placa', match.placa)
-      if (match.conductor) updateField('conductor', match.conductor)
-      if (match.documentoConductor) updateField('documentoConductor', match.documentoConductor)
-      if (match.paramedico) updateField('paramedico', match.paramedico)
-      if (match.documentoParamedico) updateField('documentoParamedico', match.documentoParamedico)
-      if (match.tipoTraslado) updateField('tipoTraslado', match.tipoTraslado)
-    }
-  }
-
+function PatientTab({ form, updateField, fieldErrors, devMode }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean>; devMode?: boolean }) {
   return (
       <Stack spacing={0.75}>
         <Grid container spacing={0.75}>
-          <Grid size={{ xs: 12, md: 2 }}><TextField size="small" label="Código APH" value={codigoAph || 'Autogenerado'} disabled fullWidth InputProps={{ readOnly: true }} sx={{ '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: codigoAph ? '#075985' : '#9ca3af', fontWeight: codigoAph ? 700 : 400 } }} /></Grid>
-          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Movil" select value={form.movil} onChange={handleMovilChange} options={ambulanciaOptions.length > 0 ? ambulanciaOptions : ambulanceOptions} error={!!fieldErrors.movil} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Codigo APH" value={form.codigo} onChange={(value) => updateField('codigo', value)} error={!!fieldErrors.codigo} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Movil" select value={form.movil} onChange={(value) => updateField('movil', value)} options={ambulanceOptions} error={!!fieldErrors.movil} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Placa" alphanumeric maxLength={7} value={form.placa} onChange={(value) => updateField('placa', value)} error={!!fieldErrors.placa} excelRef="BG: Placa_ambulancia_que_realiza_el_traslado" devMode={devMode} requiredHint={form.esAtencionInicialPacienteRemitidoOControl === '2' || form.esAtencionInicialPacienteRemitidoOControl === '6' || form.esAtencionInicialPacienteRemitidoOControl === '8'} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact select label="Atención inicial / remitido / control" value={form.esAtencionInicialPacienteRemitidoOControl} onChange={(value) => updateField('esAtencionInicialPacienteRemitidoOControl', value)} options={atencionInicialOptions} excelRef="AW: Es_atencion_inicial_paciente_remitido_o_control" devMode={devMode} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Traslado" select value={form.traslado} onChange={(value) => updateField('traslado', value)} options={trasladoOptions} error={!!fieldErrors.traslado} excelRef="BF: Tipo_de_servicio_del_transporte" devMode={devMode} /></Grid>
@@ -2063,7 +1990,7 @@ function AnatomicalBodySelector({
   )
 }
 
-function PdfPreview({ form, injuries, procedures, codigoAph }: { form: AphForm; injuries: string[]; procedures: string[]; codigoAph?: string }) {
+function PdfPreview({ form, injuries, procedures }: { form: AphForm; injuries: string[]; procedures: string[] }) {
   const fullNameValue = [form.primerNombre, form.segundoNombre, form.primerApellido, form.segundoApellido].filter(Boolean).join(' ')
 
   return (
@@ -2087,7 +2014,7 @@ function PdfPreview({ form, injuries, procedures, codigoAph }: { form: AphForm; 
           <PreviewTable rows={[
             ['Tipo ID', form.tipoDocumento || 'CC', 'Identificacion', form.documento],
             ['Nombres y Apellidos', fullNameValue, 'Sexo', form.sexo],
-            ['Codigo APH', codigoAph || 'Autogenerado', 'Prioridad', form.prioridad],
+            ['Codigo CUPS', form.codigo, 'Prioridad', form.prioridad],
             ['Traslado', form.traslado, 'Tipo', form.tipoTraslado],
           ]} />
 

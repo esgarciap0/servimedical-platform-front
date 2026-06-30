@@ -10,6 +10,7 @@
  */
 
 export type AphForm = {
+  codigo: string
   movil: string
   placa: string
   esAtencionInicialPacienteRemitidoOControl: string
@@ -125,7 +126,6 @@ export type AphPayload = AphForm & {
 
 export type AphResponse = AphPayload & {
   id: number
-  codigo: string
   createdAt: string
   updatedAt: string
 }
