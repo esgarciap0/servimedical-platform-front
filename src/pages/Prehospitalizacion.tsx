@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { toPng } from 'html-to-image'
-import { AddBoxIcon, ArrowBackIcon, ArrowForwardIcon, CloseIcon, EditIcon, FileDownloadIcon, PageviewIcon, PictureAsPdfIcon, RefreshIcon, SearchIcon, TableViewIcon } from '../icons/AppIcons'
+import { AddBoxIcon, ArrowBackIcon, ArrowForwardIcon, CloseIcon, EditIcon, FileDownloadIcon, PageviewIcon, PersonIcon, PictureAsPdfIcon, RefreshIcon, SearchIcon, TableViewIcon } from '../icons/AppIcons'
 import {
   Alert,
   Box,
@@ -34,6 +34,17 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
+import AccessTimeOutlined from '@mui/icons-material/AccessTimeOutlined'
+import BadgeOutlined from '@mui/icons-material/BadgeOutlined'
+import CalendarMonthOutlined from '@mui/icons-material/CalendarMonthOutlined'
+import DirectionsCarFilledOutlined from '@mui/icons-material/DirectionsCarFilledOutlined'
+import Edit from '@mui/icons-material/Edit'
+import HomeOutlined from '@mui/icons-material/HomeOutlined'
+import LocalHospitalOutlined from '@mui/icons-material/LocalHospitalOutlined'
+import LocationOnOutlined from '@mui/icons-material/LocationOnOutlined'
+import Person from '@mui/icons-material/Person'
+import PhoneIphoneOutlined from '@mui/icons-material/PhoneIphoneOutlined'
+import WcOutlined from '@mui/icons-material/WcOutlined'
 import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid'
 import Body, { type ExtendedBodyPart } from 'react-muscle-highlighter'
 import logo from '../assets/app-256.png'
@@ -94,8 +105,8 @@ export function Prehospitalizacion() {
   const [lesionesImagen, setLesionesImagen] = useState<string | null>(null)
   const [rows, setRows] = useState<AphResponse[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState<AphSortKey>('createdAt')
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
+  const sortBy: AphSortKey = 'createdAt'
+  const sortOrder: SortOrder = 'desc'
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({})
   const [snackbar, setSnackbar] = useState<{ message: string; fields: string[]; severity: 'error' | 'success' } | null>(null)
   const [ambulancias, setAmbulancias] = useState<AmbulanciaResponse[]>([])
@@ -130,13 +141,18 @@ export function Prehospitalizacion() {
       const second = getSortValue(b, sortBy)
       const result = compareSortValues(first, second)
 
-      return sortOrder === 'asc' ? result : -result
+      return -result
     })
-  }, [filteredRows, sortBy, sortOrder])
+  }, [filteredRows, sortBy])
 
   const dataGridColumns: GridColDef[] = [
     { field: 'codigo', headerName: 'N° ID', width: 80, valueGetter: (_value, row) => row.codigo || row.id },
-    { field: 'createdAt', headerName: 'Fecha', width: 100, valueGetter: (value) => value?.split('T')[0] || '' },
+    {
+      field: 'createdAt',
+      headerName: 'Fecha',
+      width: 100,
+      valueGetter: (_value, row) => String(row.createdAt || '').split('T')[0] || '',
+    },
     { field: 'movil', headerName: 'Móvil', width: 90 },
     { field: 'aseguradora', headerName: 'Aseguradora', width: 130 },
     { field: 'tipoDocumento', headerName: 'Tipo Doc', width: 90 },
@@ -629,7 +645,7 @@ export function Prehospitalizacion() {
   const handleGenerateFur = async (id: number) => {
     try {
       const aph = await aphService.getById(id)
-      generateFurExcel(aph)
+      await generateFurExcel(aph)
     } catch {
       setSnackbar({ message: 'Error al generar FUR', fields: [], severity: 'error' })
     }
@@ -837,10 +853,7 @@ export function Prehospitalizacion() {
                     columnHeaderHeight={44}
                     localeText={{
                       noRowsLabel: 'No hay registros disponibles',
-                      MuiTablePagination: {
-                        labelRowsPerPage: 'Filas por página:',
-                        labelDisplayedRows: ({ from, to, count }) => `${from}–${to} de ${count}`,
-                      },
+                      paginationRowsPerPage: 'Filas por página:',
                       columnMenuSortAsc: 'Ordenar ascendente',
                       columnMenuSortDesc: 'Ordenar descendente',
                       columnMenuFilter: 'Filtrar',
@@ -917,7 +930,7 @@ export function Prehospitalizacion() {
             slotProps={{
               paper: {
                 sx: {
-                  width: { xs: '100%', md: 'min(1080px, calc(100vw - 96px))' },
+                  width: { xs: '100%', md: 'min(980px, calc(100vw - 120px))' },
                   maxHeight: { xs: '100%', md: 'calc(100vh - 48px)' },
                   borderRadius: { xs: 0, md: '18px' },
                   overflow: 'hidden',
@@ -1016,7 +1029,7 @@ export function Prehospitalizacion() {
                     }}
                     elevation={0}
                 >
-                  {tab === 0 && <PatientTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} codigoAph={editId ? rows.find(r => r.id === editId)?.codigo || String(editId) : null} ambulancias={ambulancias} />}
+                  {tab === 0 && <PatientTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} codigoAph={editId ? rows.find(r => r.id === editId)?.codigo || String(editId) : null} ambulancias={ambulancias} patientRows={rows} />}
                   {tab === 1 && <InsuranceTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} />}
                   {tab === 2 && <CauseTab form={form} updateField={updateField} fieldErrors={fieldErrors} devMode={devMode} />}
                   {tab === 3 && (
@@ -1230,8 +1243,9 @@ async function imageUrlToBase64(url: string): Promise<string | undefined> {
 }
 
 
-function PatientTab({ form, updateField, fieldErrors, devMode, codigoAph, ambulancias = [] }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean>; devMode?: boolean; codigoAph?: string | null; ambulancias?: AmbulanciaResponse[] }) {
+function PatientTab({ form, updateField, fieldErrors, devMode, codigoAph, ambulancias = [], patientRows = [] }: { form: AphForm; updateField: (field: keyof AphForm, value: string) => void; fieldErrors: Record<string, boolean>; devMode?: boolean; codigoAph?: string | null; ambulancias?: AmbulanciaResponse[]; patientRows?: AphResponse[] }) {
   const ambulanciaOptions = ambulancias.map((a) => a.movil)
+  const [patientLookupDoc, setPatientLookupDoc] = useState(form.documento || '')
 
   const calculateAgeFromBirthDate = (birthDate: string): string => {
     if (!birthDate) return ''
@@ -1292,23 +1306,167 @@ function PatientTab({ form, updateField, fieldErrors, devMode, codigoAph, ambula
     updateField('municipioOrigen', getMunicipioLabelByCode(codigo))
   }
 
+  const applyPatientFromRecord = (record: AphResponse) => {
+    const fieldsToCopy: Array<keyof AphForm> = [
+      'tipoDocumento',
+      'documento',
+      'primerNombre',
+      'segundoNombre',
+      'primerApellido',
+      'segundoApellido',
+      'tipoPoblacion',
+      'estadoCivil',
+      'ocupacion',
+      'sexo',
+      'fechaNacimiento',
+      'edad',
+      'celular',
+      'telefono',
+      'avisarA',
+      'parentesco',
+      'numeroParaAvisar',
+      'numeroParaAvisar2',
+      'acompanante',
+      'celularAcompanante',
+      'direccion',
+      'zonaPaciente',
+      'departamento',
+      'ciudad',
+      'codigoMunicipioResidencia',
+    ]
+
+    fieldsToCopy.forEach((field) => updateField(field, record[field] || ''))
+
+    if (record.codigoMunicipioResidencia) {
+      handleCodigoMunicipioResidenciaChange(record.codigoMunicipioResidencia)
+    }
+  }
+
+  const handleSearchPatient = () => {
+    const normalized = patientLookupDoc.replace(/\s+/g, '').trim()
+    if (!normalized) {
+      return
+    }
+
+    const match = [...patientRows]
+      .filter((row) => String(row.documento || '').replace(/\s+/g, '') === normalized)
+      .sort((a, b) => {
+        const aTime = new Date(a.updatedAt || a.createdAt).getTime()
+        const bTime = new Date(b.updatedAt || b.createdAt).getTime()
+        return bTime - aTime
+      })[0]
+
+    if (!match) {
+      return
+    }
+
+    applyPatientFromRecord(match)
+  }
+
   return (
       <Stack spacing={0.75}>
         <Grid container spacing={0.75}>
-          <Grid size={{ xs: 12, md: 2 }}><TextField size="small" label="Código APH" value={codigoAph || 'Autogenerado'} disabled fullWidth InputProps={{ readOnly: true }} sx={{ '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: codigoAph ? '#075985' : '#9ca3af', fontWeight: codigoAph ? 700 : 400 } }} /></Grid>
+          <Grid size={{ xs: 12, md: 2 }}>
+            <TextField
+              size="small"
+              label="Código APH"
+              value={codigoAph || 'Autogenerado'}
+              disabled
+              fullWidth
+              slotProps={{
+                input: {
+                  readOnly: true,
+                  startAdornment: (
+                    <InputAdornment position="start" sx={{ mr: 0.5 }}>
+                      <Box
+                        sx={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: 0.8,
+                          bgcolor: '#e2e8f0',
+                          border: '1px solid #cbd5e1',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#64748b',
+                        }}
+                      >
+                        <BadgeOutlined sx={{ fontSize: 14 }} />
+                      </Box>
+                    </InputAdornment>
+                  ),
+                },
+              }}
+              sx={{ '& .MuiInputBase-input.Mui-disabled': { WebkitTextFillColor: codigoAph ? '#075985' : '#9ca3af', fontWeight: codigoAph ? 700 : 400 } }}
+            />
+          </Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Movil" select value={form.movil} onChange={handleMovilChange} options={ambulanciaOptions.length > 0 ? ambulanciaOptions : ambulanceOptions} error={!!fieldErrors.movil} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Placa" alphanumeric maxLength={7} value={form.placa} onChange={(value) => updateField('placa', value)} error={!!fieldErrors.placa} excelRef="BG: Placa_ambulancia_que_realiza_el_traslado" devMode={devMode} requiredHint={form.esAtencionInicialPacienteRemitidoOControl === '2' || form.esAtencionInicialPacienteRemitidoOControl === '6' || form.esAtencionInicialPacienteRemitidoOControl === '8'} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact select label="Atención inicial / remitido / control" value={form.esAtencionInicialPacienteRemitidoOControl} onChange={(value) => updateField('esAtencionInicialPacienteRemitidoOControl', value)} options={atencionInicialOptions} excelRef="AW: Es_atencion_inicial_paciente_remitido_o_control" devMode={devMode} /></Grid>
         </Grid>
 
         <SectionTitle compact>Datos del paciente o victima</SectionTitle>
-        <Grid container spacing={0.75}>
+        <Stack spacing={0.25} sx={{ mb: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'stretch',
+              width: { xs: '100%', md: 240 },
+              maxWidth: 260,
+              border: '1px solid #06b6d4',
+              borderRadius: 0.55,
+              overflow: 'hidden',
+              bgcolor: 'white',
+            }}
+          >
+            <TextField
+              value={patientLookupDoc}
+              onChange={(event) => setPatientLookupDoc(event.target.value.replace(/\D/g, '').slice(0, 20))}
+              placeholder="Numero de documento"
+              size="small"
+              fullWidth
+              variant="outlined"
+              slotProps={{
+                input: {
+                  sx: {
+                    height: 24,
+                    borderRadius: 0,
+                    '& fieldset': { border: 'none' },
+                    '& input': { fontSize: 10.5, px: 0.7, color: '#64748b' },
+                  },
+                },
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 0,
+                  '& fieldset': { border: 'none' },
+                },
+              }}
+            />
+
+            <IconButton
+              onClick={handleSearchPatient}
+              sx={{
+                width: 26,
+                minWidth: 26,
+                borderLeft: '1px solid #06b6d4',
+                borderRadius: 0,
+                color: '#0891b2',
+                bgcolor: '#fff',
+                '&:hover': { bgcolor: '#ecfeff' },
+              }}
+            >
+              <SearchIcon sx={{ fontSize: 13 }} />
+            </IconButton>
+          </Box>
+        </Stack>
+        <Grid container spacing={0.75} sx={{ mt: 0.25 }}>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Tipo ID" select showSelectedValueOnly value={form.tipoDocumento} onChange={(value) => updateField('tipoDocumento', value)} options={documentTypeOptions} error={!!fieldErrors.tipoDocumento} excelRef="C: Tipo_documento_identidad_victima" devMode={devMode} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Numero de documento" value={form.documento} onChange={(value) => updateField('documento', value)} error={!!fieldErrors.documento} maxLength={20} alphanumeric excelRef="D: Numero_documento_identidad_victima" devMode={devMode} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Primer Nombre" lettersOnly maxLength={30} value={form.primerNombre} onChange={(value) => updateField('primerNombre', value)} error={!!fieldErrors.primerNombre} excelRef="F: Primer_nombre_victima" devMode={devMode} /></Grid>
           <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Segundo Nombre" lettersOnly maxLength={30} value={form.segundoNombre} onChange={(value) => updateField('segundoNombre', value)} error={!!fieldErrors.segundoNombre} excelRef="G: Segundo_nombre_victima" devMode={devMode} /></Grid>
-          <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Primer Apellido" lettersOnly maxLength={30} value={form.primerApellido} onChange={(value) => updateField('primerApellido', value)} error={!!fieldErrors.primerApellido} excelRef="H: Primer_apellido_victima" devMode={devMode} /></Grid>
-          <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Segundo Apellido" lettersOnly maxLength={30} value={form.segundoApellido} onChange={(value) => updateField('segundoApellido', value)} error={!!fieldErrors.segundoApellido} excelRef="I: Segundo_apellido_victima" devMode={devMode} /></Grid>
+          <Grid size={{ xs: 12, md: 3 }}><FormInput compact requiredHint label="Primer Apellido" lettersOnly maxLength={30} value={form.primerApellido} onChange={(value) => updateField('primerApellido', value)} error={!!fieldErrors.primerApellido} excelRef="H: Primer_apellido_victima" devMode={devMode} leadingIcon={<PersonIcon sx={{ fontSize: 15 }} />} /></Grid>
+          <Grid size={{ xs: 12, md: 3 }}><FormInput compact label="Segundo Apellido" lettersOnly maxLength={30} value={form.segundoApellido} onChange={(value) => updateField('segundoApellido', value)} error={!!fieldErrors.segundoApellido} excelRef="I: Segundo_apellido_victima" devMode={devMode} leadingIcon={<PersonIcon sx={{ fontSize: 15 }} />} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact label="Tipo Población" select value={form.tipoPoblacion} onChange={(value) => updateField('tipoPoblacion', value)} options={poblacionOptions} excelRef="E: Tipo_de_poblacion_especial" devMode={devMode} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Estado Civil" value={form.estadoCivil} onChange={(value) => updateField('estadoCivil', value)} error={!!fieldErrors.estadoCivil} /></Grid>
           <Grid size={{ xs: 12, md: 2 }}><FormInput compact requiredHint label="Ocupacion" value={form.ocupacion} onChange={(value) => updateField('ocupacion', value)} error={!!fieldErrors.ocupacion} /></Grid>
@@ -1817,6 +1975,7 @@ function FormInput({
                      excelRef,
                      devMode = false,
                      helperText,
+                    leadingIcon,
                    }: {
   label: string
   value: string
@@ -1838,7 +1997,83 @@ function FormInput({
   excelRef?: string
   devMode?: boolean
   helperText?: string
+  leadingIcon?: ReactNode
 }) {
+  const resolveAutoIcon = (): ReactNode | undefined => {
+    const normalized = label.toLowerCase()
+
+    if (type === 'date' || normalized.includes('fecha')) return <CalendarMonthOutlined sx={{ fontSize: 15 }} />
+    if (type === 'time' || normalized.includes('hora')) return <AccessTimeOutlined sx={{ fontSize: 15 }} />
+
+    if (
+      normalized.includes('apellido')
+      || normalized.includes('nombre')
+      || normalized.includes('acompañante')
+      || normalized.includes('conductor')
+      || normalized.includes('propietario')
+      || normalized.includes('paramedico')
+      || normalized.includes('médico')
+      || normalized.includes('medico')
+      || normalized.includes('quien recibe')
+    ) return <Person sx={{ fontSize: 15 }} />
+
+    if (
+      normalized.includes('documento')
+      || normalized.includes('id')
+      || normalized.includes('codigo')
+      || normalized.includes('código')
+      || normalized.includes('cie10')
+      || normalized.includes('edad')
+    ) return <BadgeOutlined sx={{ fontSize: 15 }} />
+
+    if (normalized.includes('sexo')) return <WcOutlined sx={{ fontSize: 15 }} />
+
+    if (normalized.includes('telefono') || normalized.includes('teléfono') || normalized.includes('celular')) {
+      return <PhoneIphoneOutlined sx={{ fontSize: 15 }} />
+    }
+
+    if (normalized.includes('direccion') || normalized.includes('dirección')) return <HomeOutlined sx={{ fontSize: 15 }} />
+
+    if (
+      normalized.includes('municipio')
+      || normalized.includes('ciudad')
+      || normalized.includes('departamento')
+      || normalized.includes('zona')
+      || normalized.includes('origen')
+      || normalized.includes('destino')
+      || normalized.includes('ubicacion')
+      || normalized.includes('ubicación')
+      || normalized.includes('lugar')
+    ) return <LocationOnOutlined sx={{ fontSize: 15 }} />
+
+    if (
+      normalized.includes('movil')
+      || normalized.includes('móvil')
+      || normalized.includes('placa')
+      || normalized.includes('vehiculo')
+      || normalized.includes('vehículo')
+      || normalized.includes('traslado')
+      || normalized.includes('tripulacion')
+      || normalized.includes('tripulación')
+    ) return <DirectionsCarFilledOutlined sx={{ fontSize: 15 }} />
+
+    if (
+      normalized.includes('diagnostico')
+      || normalized.includes('diagnóstico')
+      || normalized.includes('hallazgo')
+      || normalized.includes('alerg')
+      || normalized.includes('patolog')
+      || normalized.includes('medic')
+      || normalized.includes('procedimiento')
+      || normalized.includes('material')
+      || normalized.includes('droga')
+    ) return <LocalHospitalOutlined sx={{ fontSize: 15 }} />
+
+    return <Edit sx={{ fontSize: 14 }} />
+  }
+
+  const resolvedLeadingIcon = leadingIcon ?? resolveAutoIcon()
+
   const handleChange = (raw: string) => {
     let val = raw
     if (alphanumeric) val = val.replace(/[^a-zA-Z0-9]/g, '')
@@ -1869,6 +2104,29 @@ function FormInput({
     }
     if (maxLength !== undefined) {
       props.htmlInput = { maxLength }
+    }
+    if (resolvedLeadingIcon) {
+      props.input = {
+        startAdornment: (
+          <InputAdornment position="start" sx={{ mr: 0.5 }}>
+            <Box
+              sx={{
+                width: 20,
+                height: 20,
+                borderRadius: 0.8,
+                bgcolor: '#e2e8f0',
+                border: '1px solid #cbd5e1',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#64748b',
+              }}
+            >
+              {resolvedLeadingIcon}
+            </Box>
+          </InputAdornment>
+        ),
+      }
     }
     return Object.keys(props).length > 0 ? props : undefined
   })()
@@ -2235,4 +2493,3 @@ function Cell({ label, value }: { label: string; value: string }) {
       </Box>
   )
 }
-

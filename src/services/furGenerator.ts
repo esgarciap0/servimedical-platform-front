@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx'
+import writeXlsxFile from 'write-excel-file'
 import type { AphResponse } from '../types/aph'
 
 /**
@@ -71,7 +71,7 @@ const FUR_COLUMNS: { header: string; field: keyof AphResponse | null }[] = [
   { header: 'Transporte_de_la_victima_hasta_el_fin_del_recorrido_direccion_IPS', field: 'direccionDestinoTransportePrimario' },
 ]
 
-export function generateFurExcel(aph: AphResponse): void {
+export async function generateFurExcel(aph: AphResponse): Promise<void> {
   const headers = FUR_COLUMNS.map((c) => c.header)
   const row = FUR_COLUMNS.map((c) => {
     if (!c.field) return ''
@@ -79,14 +79,15 @@ export function generateFurExcel(aph: AphResponse): void {
     return value != null ? String(value) : ''
   })
 
-  const ws = XLSX.utils.aoa_to_sheet([headers, row])
-
-  // Ajustar ancho de columnas
-  ws['!cols'] = headers.map((h) => ({ wch: Math.max(h.length, 15) }))
-
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'FUR')
-
   const fileName = `FUR_${aph.documento || aph.id}_${aph.fechaAccidente || 'sin-fecha'}.xlsx`
-  XLSX.writeFile(wb, fileName)
+  const data = [
+    headers.map((value) => ({ value, fontWeight: 'bold' as const })),
+    row.map((value) => ({ value })),
+  ]
+
+  await writeXlsxFile(data, {
+    fileName,
+    sheet: 'FUR',
+    columns: headers.map((header) => ({ width: Math.max(header.length, 15) })),
+  })
 }
