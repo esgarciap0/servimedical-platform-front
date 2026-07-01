@@ -11,6 +11,10 @@ export function ArrowForwardIcon(props: SvgIconProps) {
     return <SvgIcon {...props}><path d="M12 4 10.6 5.4 16.2 11H4v2h12.2l-5.6 5.6L12 20l8-8-8-8Z" /></SvgIcon>
 }
 
+export function ArrowBackIcon(props: SvgIconProps) {
+    return <SvgIcon {...props}><path d="m12 4-8 8 8 8 1.4-1.4-5.6-5.6H20v-2H7.8l5.6-5.6L12 4Z" /></SvgIcon>
+}
+
 export function CloseIcon(props: SvgIconProps) {
     return <SvgIcon {...props}><path d="m18.3 5.7-1.4-1.4L12 9.2 7.1 4.3 5.7 5.7l4.9 4.9-4.9 4.9 1.4 1.4 4.9-4.9 4.9 4.9 1.4-1.4-4.9-4.9 4.9-4.9Z" /></SvgIcon>
 }

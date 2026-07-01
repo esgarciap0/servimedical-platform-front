@@ -79,11 +79,12 @@ async function drawSinglePage(ctx: Ctx, data: AphFull, logo: PDFImage | null): P
       kv('Sexo', data.sexo, 1),
       kv('Nacimiento', data.fechaNacimiento, 2),
       kv('Edad', data.edad, 1),
-      kv('Celular', data.celular, 2),
+      kv('Contacto', joinValues([data.celular, data.telefono], ' / '), 3),
       kv('Direccion', data.direccion, 3),
-      kv('Municipio', joinLocation(data.departamento, data.ciudad), 3),
-      kv('Acompanante', data.acompanante, 2),
-      kv('Avisar a', joinValues([data.avisarA, data.numeroParaAvisar]), 4),
+      kv('Ubicacion', joinLocationWithZone(data.departamento, data.ciudad, data.zonaPaciente), 3),
+      kv('Perfil', buildPatientProfile(data), 2),
+      kv('Acompanante', joinValues([data.acompanante, data.celularAcompanante], ' / '), 2),
+      kv('Avisar a', joinValues([data.avisarA, data.parentesco, data.numeroParaAvisar, data.numeroParaAvisar2], ' / '), 2),
     ],
   })
 
@@ -98,15 +99,16 @@ async function drawSinglePage(ctx: Ctx, data: AphFull, logo: PDFImage | null): P
     cells: [
       kv('Causa', data.causaExterna, 2, true),
       kv('Naturaleza', data.naturalezaEvento, 2),
-      kv('Aseg.', data.estadoAseguramiento, 2),
+      kv('Aseg.', joinValues([data.estadoAseguramiento, data.codigoAseguradora], ' / '), 2),
       kv('Lugar', data.lugarOcurrencia, 3),
-      kv('Origen', joinLocation(data.departamentoOrigen, data.municipioOrigen), 2),
+      kv('Origen', joinLocationWithZone(data.departamentoOrigen, data.municipioOrigen, data.zonaOrigen), 2),
       kv('Estado', data.estadoPaciente, 1, true),
       kv('Transportado a', data.transportadoA, 3, true),
       kv('Destino', joinLocation(data.departamentoTraslado, data.ciudadTransporte), 2),
-      kv('Hab.', firstValue(data.codigoHabilitacion, data.codigoHabilitacionPrestadorRecibe), 1),
-      kv('Plan', firstValue(data.planBeneficios, data.poliza, data.numeroPolizaSoat), 2),
+      kv('Hab.', firstValue(data.codigoHabilitacion, data.codigoHabilitacionPrestadorRecibe, data.codigoHabilitacionRecibeTransportePrimario), 1),
+      kv('Plan', joinValues([firstValue(data.planBeneficios, data.poliza, data.numeroPolizaSoat), joinValues([data.fechaInicioVigencia, data.fechaFinVigencia], ' a ')], ' | '), 2),
       kv('Victima', data.condicionVictima, 2),
+      kv('Aseguradora', joinValues([data.aseguradora, joinValues([data.fechaAceptacion, data.horaAceptacion], ' ')], ' / '), 2),
     ],
   })
 
@@ -197,7 +199,7 @@ function drawSummary(ctx: Ctx, data: AphFull): void {
     { label: 'Movil', value: data.movil, color: COLORS.green },
     { label: 'Placa', value: data.placa, color: COLORS.slate },
     { label: 'Fecha / hora', value: joinValues([data.fechaAccidente, data.horaAccidente]), color: COLORS.slate },
-    { label: 'Llegada', value: data.horaLlegada, color: COLORS.slate },
+    { label: 'Llegada / acept.', value: joinValues([data.horaLlegada, data.horaAceptacion], ' / '), color: COLORS.slate },
   ]
   const width = (CONTENT_WIDTH - gap * (items.length - 1)) / items.length
 
@@ -332,9 +334,10 @@ async function drawInjuryPanel(ctx: Ctx, data: AphFull, x: number, y: number, wi
   drawSectionFrame(ctx, x, y, width, height, 'Ubicacion de lesiones')
 
   const imageX = x + 8
-  const imageY = y - height + 10
-  const imageW = 155
-  const imageH = height - 22
+  const imageY = y - height + 9
+  const textColumnW = 80
+  const imageW = width - textColumnW - 18
+  const imageH = height - 20
 
   ctx.page.drawRectangle({
     x: imageX,
@@ -354,8 +357,8 @@ async function drawInjuryPanel(ctx: Ctx, data: AphFull, x: number, y: number, wi
         y: imageY,
         width: imageW,
         height: imageH,
-        paddingX: 5,
-        paddingY: 5,
+        paddingX: 2,
+        paddingY: 2,
       })
     } catch {
       drawBodySilhouettes(ctx, imageX, imageY, imageW, imageH, data.lesiones)
@@ -364,35 +367,36 @@ async function drawInjuryPanel(ctx: Ctx, data: AphFull, x: number, y: number, wi
     drawBodySilhouettes(ctx, imageX, imageY, imageW, imageH, data.lesiones)
   }
 
-  const textX = imageX + imageW + 10
+  const textX = imageX + imageW + 8
+  const textW = x + width - 8 - textX
   drawText(ctx, 'Lesiones registradas', textX, y - 31, {
     font: ctx.bold,
-    size: 7.2,
+    size: 6.8,
     color: COLORS.blue,
   })
   drawWrappedText(ctx, listValues(data.lesiones), {
     x: textX,
     y: y - 44,
-    width: width - imageW - 28,
-    height: 34,
-    lineHeight: 7.4,
+    width: textW,
+    height: 36,
+    lineHeight: 7.1,
     font: ctx.normal,
-    size: 6.3,
+    size: 6.0,
     color: COLORS.slate,
   })
   drawText(ctx, 'Descripcion del evento', textX, y - 88, {
     font: ctx.bold,
-    size: 7.2,
+    size: 6.8,
     color: COLORS.blue,
   })
   drawWrappedText(ctx, firstValue(data.descripcionOtroEvento, data.causaExterna, 'Sin dato'), {
     x: textX,
     y: y - 101,
-    width: width - imageW - 28,
+    width: textW,
     height: 34,
-    lineHeight: 7.4,
+    lineHeight: 7.1,
     font: ctx.normal,
-    size: 6.3,
+    size: 6.0,
     color: COLORS.slate,
   })
 }
@@ -431,12 +435,15 @@ function drawCareAndAdmin(ctx: Ctx, data: AphFull, x: number, y: number, width: 
       'SOAT / administracion',
       joinValues(
           [
+            labelValue('Inicial/ctrl', data.esAtencionInicialPacienteRemitidoOControl),
             labelValue('Traslado', firstValue(data.traslado, data.tipoTraslado)),
             labelValue('Servicio', data.tipoServicioTransporte),
             labelValue('Vehiculo', joinValues([data.placaVehiculo, data.tipoVehiculo])),
             labelValue('SIRAS', data.numeroRadicadoSiras),
-            labelValue('Propietario', fullOwnerName(data)),
-            labelValue('Cond. vehiculo', fullVehicleDriverName(data)),
+            labelValue('Origen prim.', data.direccionOrigenTransportePrimario),
+            labelValue('Destino prim.', data.direccionDestinoTransportePrimario),
+            labelValue('Propietario', joinValues([fullOwnerName(data), joinValues([data.tipoDocumentoPropietario, data.numeroDocumentoPropietario])], ' / ')),
+            labelValue('Cond. vehiculo', joinValues([fullVehicleDriverName(data), joinValues([data.tipoDocumentoConductorVehiculo, data.numeroDocumentoConductorVehiculo])], ' / ')),
           ],
           ' | ',
       ),
@@ -451,7 +458,7 @@ function drawCrewAndSignatures(ctx: Ctx, data: AphFull, x: number, y: number, wi
   const crew = [
     { role: 'Conductor', value: joinPersonDoc(data.conductor, data.documentoConductor), label: 'Firma conductor / responsable' },
     { role: 'Encargado del traslado', value: joinPersonDoc(data.paramedico, data.documentoParamedico), label: 'Firma / sello traslado' },
-    { role: 'Recibe paciente', value: joinPersonDoc(data.medico, data.documentoMedico), label: 'Firma / sello recibe' },
+    { role: 'Recibe paciente', value: joinValues([data.medico, joinValues([data.tipoDocumentoProfesionalRecibe, data.documentoMedico])], ' / '), label: 'Firma / sello recibe' },
   ]
 
   crew.forEach((item, index) => {
@@ -1036,6 +1043,17 @@ function buildSampleHistory(data: AphFull): string {
   )
 }
 
+function buildPatientProfile(data: AphFull): string {
+  return joinValues(
+      [
+        labelValue('Est. civil', data.estadoCivil),
+        labelValue('Pobl.', data.tipoPoblacion),
+        labelValue('Ocup.', data.ocupacion),
+      ],
+      ' | ',
+  )
+}
+
 function labelValue(label: string, value: string | null | undefined): string {
   return `${label}: ${nvl(value) || 'Sin dato'}`
 }
@@ -1068,6 +1086,10 @@ function joinPersonDoc(name: string, doc: string): string {
 
 function joinLocation(department: string, city: string): string {
   return joinValues([department, city], ' / ')
+}
+
+function joinLocationWithZone(department: string, city: string, zone: string): string {
+  return joinValues([joinLocation(department, city), zone ? `Zona ${zone}` : ''], ' / ')
 }
 
 function joinValues(values: Array<string | null | undefined>, separator = ' '): string {
